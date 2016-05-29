@@ -1,4 +1,4 @@
-;;; ivy-erlang-complete --- Erlang completion at point using ivy.
+;;; ivy-erlang-complete.el --- Erlang completion at point using ivy.
 
 
 ;; Copyright (C) 2016 Sergey Kostyaev
