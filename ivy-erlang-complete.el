@@ -260,7 +260,9 @@
 (defun ivy-erlang-complete--insert-candidate (candidate)
   "Insert CANDIDATE at point."
   (if ivy-erlang-complete--is-export
-      (ivy-completion-in-region-action candidate)
+      (progn
+        (setq ivy-erlang-complete--is-export nil)
+        (ivy-completion-in-region-action candidate))
    (if (string-match "\\([^/]+\\)/\\([0-9]+\\)" candidate)
        (let ((arity (string-to-number
                      (substring candidate
