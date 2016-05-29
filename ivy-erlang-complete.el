@@ -6,6 +6,7 @@
 ;; Author: Sergey Kostyaev <feo.me@ya.ru>
 ;; Version: 1.0.0
 ;; Keywords: erlang ivy completion
+;; Package-Requires: ((emacs "24.4") (ivy "0.8.0") (dash "2.12.1") (s "1.11.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
