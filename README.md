@@ -118,6 +118,8 @@ context sensitive completions for:
 * record fields
 * macros names
 
+![gif](https://github.com/s-kostyaev/ivy-erlang-complete/raw/master/try.gif)
+
 ## Why not `distel`?
 
 `distel` is great. I think `distel` much better then this package. But
