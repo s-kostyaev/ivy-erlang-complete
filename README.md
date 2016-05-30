@@ -27,7 +27,7 @@ emacs packages will be installed automatically.
  
 ## Basic setup
 
-For star using you need add to `init.el` something like this:
+For start using you need add to `init.el` something like this:
 
 ``` emacs-lisp
 (require 'ivy-erlang-complete)
@@ -115,8 +115,8 @@ This is my emacs config for erlang developement:
 
 ## Current state
 
-For now project is useful but can contain some bugs. For now there are
-context sensitive completions for:
+For now project is useful but can contain some bugs. There are context
+sensitive completions for:
 * local functions
 * module names
 * module functions
@@ -130,7 +130,7 @@ context sensitive completions for:
 
 `distel` is great. I think `distel` much better then this package. But
 I can't use it on my job for erlang developement. Only licensed nodes
-can connect to cluster, distel nodes can not. I try to use esense
+can connect to cluster, distel nodes can not. I was trying to use esense
 instead. But esense project is now dead and nobody fix crashes in
 it. So I start this project.
 
