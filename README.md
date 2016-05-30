@@ -17,7 +17,7 @@ dependencies:
  * `dash.el`
  
 If you install this package from [MELPA](https://melpa.org/) all nedded
-emacs packages will be install automatically.
+emacs packages will be installed automatically.
 
 ### System packages
  * findutils
@@ -33,6 +33,7 @@ For star using you need add to `init.el` something like this:
 (require 'ivy-erlang-complete)
 (add-hook 'erlang-mode-hook '(define-key erlang-mode-map (kbd "C-:")
                                'ivy-erlang-complete))
+;; automatic update completion data after save
 (add-hook 'after-save-hook 'ivy-erlang-complete-reparse)
 ```
 
