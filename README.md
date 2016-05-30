@@ -5,15 +5,20 @@ without connecting to erlang nodes.
 
 ## Installation
 
-You will can install package `ivy-erlang-complete` from
-[MELPA](https://melpa.org/) soon. For now just put
-`ivy-erlang-complete.el` to load path. You also need install
+You will can now install package `ivy-erlang-complete` from
+[MELPA](https://melpa.org/#/getting-started). Just `M-x`
+`package-install`<kbd>Enter</kbd> `ivy-erlang-complete` <kbd>Enter</kbd>.
+
+Or just put `ivy-erlang-complete.el` to load path. You also need install
 dependencies:
 ### Emacs packages (can be installed from [MELPA](https://melpa.org/))
  * `ivy`
  * `s.el`
  * `dash.el`
  
+If you install this package from [MELPA](https://melpa.org/) all nedded
+emacs packages will be install automatically.
+
 ### System packages
  * findutils
  * coreutils
