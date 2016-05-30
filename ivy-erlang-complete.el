@@ -111,6 +111,7 @@
         (puthash (car matched)
                  (-remove (lambda (s)
                             (or (string-empty-p s)
+                                (s-prefix? "|" s)
                                 (string-match-p "^[})[:space:]=]+$" s)))
                           (-map 's-trim (s-split "," (car (cdr matched)))))
                  ivy-erlang-complete-records)
