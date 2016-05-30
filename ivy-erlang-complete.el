@@ -108,9 +108,13 @@
                (-drop 1 (s-match "-record(\\([^,]+\\),[^{]*{\\(.*\\)}*."
                                  (s-collapse-whitespace record))))))
     (if matched
-        (puthash (car matched) (-map 's-trim (s-split "," (car (cdr matched))))
-                   ivy-erlang-complete-records)
-        )))
+        (puthash (car matched)
+                 (-remove (lambda (s)
+                            (or (string-empty-p s)
+                                (string-match-p "^[})[:space:]=]+$" s)))
+                          (-map 's-trim (s-split "," (car (cdr matched)))))
+                 ivy-erlang-complete-records)
+      )))
 
 (defun ivy-erlang-complete--extract-functions (file)
   "Extract all functions from FILE."
@@ -150,12 +154,12 @@
 
 (defun ivy-erlang-complete-thing-at-point ()
   "Return the erlang thing at point, or nil if none is found."
-  (when (thing-at-point-looking-at "[A-Za-z0-9_#:]+")
+  (when (thing-at-point-looking-at "['A-Za-z0-9_#:]+")
     (match-string-no-properties 0)))
 
 (defun ivy-erlang-complete-record-at-point ()
   "Return the erlang record at point, or nil if none is found."
-  (when (thing-at-point-looking-at "#\\([a-zA-z0-9_]+\\){[^{^}]+" 500)
+  (when (thing-at-point-looking-at "#\\('?[a-zA-z0-9_]+'?\\){[^{^}]+" 500)
     (match-string-no-properties 0)))
 
 (defun ivy-erlang-complete-export-at-point ()

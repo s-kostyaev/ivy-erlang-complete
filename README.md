@@ -110,7 +110,13 @@ This is my emacs config for erlang developement:
                   (ivy-erlang-complete-set-project-root))))
              (define-key erlang-mode-map (kbd "C-c C-d")
                (lambda () (interactive)
-                 (eopengrok-find-definition (ivy-erlang-complete-thing-at-point))))
+                 (if (ivy-erlang-complete-record-at-point)
+                     (eopengrok-find-text
+                      (concat "\""
+                              (s-replace "#" "record("
+                                         (ivy-erlang-complete-thing-at-point))
+                              "\""))
+                  (eopengrok-find-definition (ivy-erlang-complete-thing-at-point)))))
              (define-key erlang-mode-map (kbd "C-c C-r")
                (lambda () (interactive)
                  (eopengrok-find-reference (ivy-erlang-complete-thing-at-point))))
