@@ -6,8 +6,8 @@
 ;; Author: Sergey Kostyaev <feo.me@ya.ru>
 ;; Version: 1.0.0
 ;; Keywords: erlang ivy completion
-;; Package-Requires: ((emacs "24.4") (ivy "0.8.0") (dash "2.12.1") (s "1.11.0"))
-
+;; Package-Requires: ((emacs "24.4") (ivy "0.8.0") (dash "2.12.1") (s "1.11.0")
+;;                        (erlang "20151013.157"))
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
 ;; the Free Software Foundation, either version 3 of the License, or
@@ -30,6 +30,8 @@
 (require 'subr-x)
 (require 'dash)
 (require 's)
+(require 'erlang)
+(require 'imenu)
 
 (defvar ivy-erlang-complete-erlang-root "/usr/lib/erlang"
   "Path to erlang root.")
@@ -51,6 +53,9 @@
 
 (defvar-local ivy-erlang-complete--record-names nil
   "Record names accessible in current buffer.")
+
+(defvar-local ivy-erlang-complete--local-functions nil
+  "Local functions in current buffer.")
 
 (defun ivy-erlang-complete--find-functions (module)
   "Find functions in MODULE."
@@ -117,41 +122,16 @@
                  ivy-erlang-complete-records)
       )))
 
-(defun ivy-erlang-complete--extract-functions (file)
-  "Extract all functions from FILE."
-  (s-split "\n"
-    (shell-command-to-string
-     (s-join " "
-      (list
-       "sed -n '/^[a-z][a-zA-Z0-9_]*(.*)/,/[[:space:]]*->/p' " file
-       " | sed -e '/%/d' | sed -e '/^\\\-/d' | sed -e '/^[[:space:]]/d'"
-       "| sed '/^$/d' | sed -e 's/).*/)/g'")))
-    t))
-
-(defun ivy-erlang-complete--set-arity (erl-function)
-  "Set arity to ERL-FUNCTION instead of arglist."
-  (let ((arity
-         (format "%d"
-          (length
-           (-drop-while 'string-empty-p
-            (-map 's-trim
-                  (s-split
-                   ","
-                   (replace-regexp-in-string
-                    ")" ""
-                    (replace-regexp-in-string
-                     "[^(]+(" ""
-                     (s-collapse-whitespace erl-function)))
-                   t)))))))
-    (when
-        (string-match "[^(]+" erl-function)
-      (concat (substring erl-function (match-beginning 0) (match-end 0))
-              "/" arity))))
-
 (defun ivy-erlang-complete--find-local-functions ()
   "Find all local functions."
-  (-map #'ivy-erlang-complete--set-arity
-          (ivy-erlang-complete--extract-functions (buffer-file-name))))
+  (if (not ivy-erlang-complete--local-functions)
+      (setq ivy-erlang-complete--local-functions
+            (progn
+              (let ((pos (point)))
+                (imenu-default-create-index-function)
+                (goto-char pos))
+              (-map (lambda (elem) (car elem)) imenu--index-alist))))
+  ivy-erlang-complete--local-functions)
 
 (defun ivy-erlang-complete-thing-at-point ()
   "Return the erlang thing at point, or nil if none is found."
@@ -183,6 +163,8 @@
   (interactive)
   (if (s-equals? major-mode "erlang-mode")
       (progn
+        (setq ivy-erlang-complete--local-functions nil)
+        (ivy-erlang-complete--find-local-functions)
         (setq ivy-erlang-complete-macros nil)
         (ivy-erlang-complete--get-macros)
         (setq ivy-erlang-complete-records nil)
