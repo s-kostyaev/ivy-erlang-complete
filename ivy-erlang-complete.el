@@ -52,8 +52,6 @@
 (defvar-local ivy-erlang-complete--record-names nil
   "Record names accessible in current buffer.")
 
-(defvar-local ivy-erlang-complete--is-export nil)
-
 (defun ivy-erlang-complete--find-functions (module)
   "Find functions in MODULE."
   (if (not ivy-erlang-complete-project-root)
@@ -260,9 +258,8 @@
 
 (defun ivy-erlang-complete--insert-candidate (candidate)
   "Insert CANDIDATE at point."
-  (if ivy-erlang-complete--is-export
+  (if (ivy-erlang-complete-export-at-point)
       (progn
-        (setq ivy-erlang-complete--is-export nil)
         (ivy-completion-in-region-action candidate))
    (if (string-match "\\([^/]+\\)/\\([0-9]+\\)" candidate)
        (let ((arity (string-to-number
@@ -296,7 +293,6 @@
      (progn
        (if (ivy-erlang-complete-export-at-point)
            (progn
-             (setq ivy-erlang-complete--is-export t)
              (setq ivy-erlang-complete-candidates
                   (ivy-erlang-complete--find-local-functions)))
         (if
