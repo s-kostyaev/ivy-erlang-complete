@@ -56,6 +56,14 @@
 (defvar-local ivy-erlang-complete--local-functions nil
   "Local functions in current buffer.")
 
+;; For test eval this
+;; (progn
+;;  (load-file "/home/feofan/.emacs.d/ivy-erlang-complete/ivy-erlang-complete.el")
+;;  (ivy-erlang-complete--test-export-regexp))
+;; now broken
+(defvar ivy-erlang-complete--export-regexp
+  (concat "^\-export([:space:]*" (regexp-quote "[") "[a-z0-9_/\,[:space:][%[^\n]*]*]*" (regexp-quote "]") "[:space:]*" (regexp-quote ").")))
+
 (defun ivy-erlang-complete--find-functions (module)
   "Find functions in MODULE."
   (if (not ivy-erlang-complete-project-root)
@@ -145,7 +153,7 @@
 (defun ivy-erlang-complete-export-at-point ()
   "Return the erlang export at point, or nil if none is found."
   (when (thing-at-point-looking-at
-         "-export([\n[:space:]]*\[[a-z0-9_/,[:space:]\n]*\][\n[:space:]]*)\."
+         ivy-erlang-complete--export-regexp
          500)
     (match-string-no-properties 0)))
 
@@ -308,7 +316,93 @@
             :initial-input ivy-erlang-complete-predicate
             :action #'ivy-erlang-complete--insert-candidate))
 
+;;; Testing
+(defun ivy-erlang-complete--test-regexp (name re match-data unmatch-data)
+  "Test with NAME for RE that must match MATCH-DATA and must not match UNMATCH-DATA."
+  (-map (lambda (s)
+          (if (string-match-p re s)
+              (message "pass %s regexp" name)
+            (message "fail %s regexp must match: %s" name s)))
+        match-data)
+  (-map (lambda (s)
+          (if (string-match-p re s)
+              (message "fail %s regexp must not match: %s" name s)
+            (message "pass %s regexp" name))) unmatch-data))
 
+(defconst ivy-erlang-complete--matched-export-data
+  '("-export([add/2, hello/0, greet_and_add_two/1])."
+    "-export([add/2,
+    hello/0,
+    greet_and_add_two/1])."
+    "-export(
+[
+    add/2,
+\t  hello/0,
+    greet_and_add_two/1])."
+    "-export( [add/2, hello/0, greet_and_add_two/1] )."
+    "-export([
+    add/2,
+    hello/0,
+    greet_and_add_two/1
+  ]
+)."
+    "-export(
+  [
+%
+    add/2,
+    hello/0,
+    greet_and_add_two/1
+  ])."
+    "-export(
+  [
+%
+    add/2, %% some
+   %% hello/0,
+    greet_and_add_two/1
+    ])."
+"-export(
+  [
+    add/2, %% some
+   %% hello/0,
+    greet_and_add_two/1
+  ])."))
+
+(defconst ivy-erlang-complete--unmatched-export-data
+  '("-export([
+    add/2,
+\t  hello/0,
+   % greet_and_add_two/1])."
+    "-export( add/2, hello/0, greet_and_add_two/1] )."
+    "-export(
+  %[
+    add/2,
+    hello/0,
+    greet_and_add_two/1
+  ]
+)."
+    "-export(
+  [
+%
+    add/2,
+    hello/0,
+    greet_and_add_two/1
+  
+)."
+    "-export(
+  [
+%
+    add/2, %% some
+   %% hello/0,
+    greet_and_add_two/1
+  ]
+% )."))
+
+(defun ivy-erlang-complete--test-export-regexp ()
+  "Testing export regexp."
+  (ivy-erlang-complete--test-regexp
+   "export" ivy-erlang-complete--export-regexp
+   ivy-erlang-complete--matched-export-data
+   ivy-erlang-complete--unmatched-export-data))
 
 (provide 'ivy-erlang-complete)
 ;;; ivy-erlang-complete.el ends here
