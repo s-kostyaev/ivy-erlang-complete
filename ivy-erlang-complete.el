@@ -160,7 +160,7 @@
 
 (defun ivy-erlang-complete-record-at-point ()
   "Return the erlang record at point, or nil if none is found."
-  (when (thing-at-point-looking-at "#\\('?[a-zA-z0-9_]+'?\\){[^{^}]+" 500)
+  (when (thing-at-point-looking-at "#\\('?[a-zA-z0-9_]+'?\\){[^{^}]*}?" 500)
     (match-string-no-properties 0)))
 
 (defun ivy-erlang-complete-export-at-point ()
@@ -207,7 +207,7 @@
       (ivy-erlang-complete-reparse))
   (setq ivy-erlang-complete--record-names nil)
   (maphash (lambda (key _)
-             (push (concat "#" key "{ }") ivy-erlang-complete--record-names))
+             (push (concat "#" key "{}") ivy-erlang-complete--record-names))
            ivy-erlang-complete-records)
   ivy-erlang-complete--record-names)
 
@@ -276,10 +276,10 @@
                   (make-string (if (= 0 arity) arity (- arity 1)) ?,)
                   ")"))
          (goto-char (- (point) arity)))
-     (if (string-match ".*{ }$" candidate)
+     (if (string-match ".*{}$" candidate)
          (progn
            (ivy-completion-in-region-action candidate)
-           (goto-char (- (point) 2)))
+           (goto-char (- (point) 1)))
        (ivy-completion-in-region-action candidate)))))
 
 ;;;###autoload
