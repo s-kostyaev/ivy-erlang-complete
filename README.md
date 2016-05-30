@@ -63,18 +63,27 @@ This is my emacs config for erlang developement:
       ((dir
         (expand-file-name (read-directory-name
                            "Select project directory:" default-directory))))
-    (setq flycheck-erlang-include-path (list dir
-                                             (concat dir "/include")
-                                             (concat dir "/deps")
-                                             default-directory
-                                             (concat
-                                              (locate-dominating-file
-                                               default-directory
-                                               "src") "include")
-                                             (concat
-                                              (locate-dominating-file
-                                               default-directory
-                                               "src") "deps")))))
+    (setq flycheck-erlang-include-path (append
+                                        (s-split
+                                         "\n"
+                                         (shell-command-to-string
+                                          (concat "find "
+                                                  dir
+                                                  "/*"
+                                                  " -type d -name include"))
+                                         t)
+                                        (list dir
+                                              (concat dir "/include")
+                                              (concat dir "/deps")
+                                              default-directory
+                                              (concat
+                                               (locate-dominating-file
+                                                default-directory
+                                                "src") "include")
+                                              (concat
+                                               (locate-dominating-file
+                                                default-directory
+                                                "src") "deps"))))))
 
 (defun fix-erlang-project-code-path ()
   "Find erlang include paths for selected directory with project deps."
