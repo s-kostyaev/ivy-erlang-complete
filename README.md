@@ -106,6 +106,7 @@ This is my emacs config for erlang developement:
                'ivy-erlang-complete-reparse)
              (define-key erlang-mode-map (kbd "C-c C-e")
                (lambda ()
+                 (interactive)
                  (eopengrok-make-index-with-enable-projects
                   (ivy-erlang-complete-set-project-root))))
              (define-key erlang-mode-map (kbd "C-c C-d")
