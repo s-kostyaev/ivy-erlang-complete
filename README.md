@@ -5,7 +5,7 @@ without connecting to erlang nodes.
 
 ## Installation
 
-You will can now install package `ivy-erlang-complete` from
+You can now install package `ivy-erlang-complete` from
 [MELPA](https://melpa.org/#/getting-started). Just `M-x`
 `package-install`<kbd>Enter</kbd> `ivy-erlang-complete` <kbd>Enter</kbd>.
 
