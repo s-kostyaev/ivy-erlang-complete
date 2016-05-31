@@ -67,6 +67,19 @@
 (defvar ivy-erlang-complete--export-regexp
   "-export([[:space:]\n]*\\[[\n[:space:]]*[a-z/0-9\n[:space:]\,_]*][\n[:space:]]*).")
 
+(defun copy-buffer-no-comments ()
+  "Copy current buffer to new one with removing comments."
+  (let* ((old-buf (buffer-name))
+         (new-buf (concat "*" old-buf "*"))
+         (content (buffer-substring-no-properties (point-min) (point-max)))
+         (pos (point)))
+    (with-current-buffer (get-buffer-create new-buf)
+      (insert content)
+      (while (string-match ivy-erlang-complete--comment-regexp (buffer-substring-no-properties (point-min) (point-max)))
+        (replace-match (make-string (length (match-string 0)) ?\ )))
+      (goto-char pos))
+    new-buf))
+
 (defun ivy-erlang-complete--find-functions (module)
   "Find functions in MODULE."
   (if (not ivy-erlang-complete-project-root)
@@ -155,10 +168,13 @@
 
 (defun ivy-erlang-complete-export-at-point ()
   "Return the erlang export at point, or nil if none is found."
-  (when (thing-at-point-looking-at
-         ivy-erlang-complete--export-regexp
-         500)
-    (match-string-no-properties 0)))
+  (with-current-buffer (get-buffer-create (copy-buffer-no-comments))
+   (when (thing-at-point-looking-at
+          ivy-erlang-complete--export-regexp
+          500)
+     (let ((result (match-string-no-properties 0)))
+       (kill-buffer)
+       result))))
 
 (defun ivy-erlang-complete--get-included-files ()
   "Get included files for current buffer."
