@@ -56,13 +56,16 @@
 (defvar-local ivy-erlang-complete--local-functions nil
   "Local functions in current buffer.")
 
+(defvar ivy-erlang-complete--comment-regexp
+  "%.*$")
+
 ;; For test eval this
 ;; (progn
 ;;  (load-file "/home/feofan/.emacs.d/ivy-erlang-complete/ivy-erlang-complete.el")
 ;;  (ivy-erlang-complete--test-export-regexp))
-;; now broken
+
 (defvar ivy-erlang-complete--export-regexp
-  (concat "^\-export([:space:]*" (regexp-quote "[") "[a-z0-9_/\,[:space:][%[^\n]*]*]*" (regexp-quote "]") "[:space:]*" (regexp-quote ").")))
+  "-export([[:space:]\n]*\\[[\n[:space:]]*[a-z/0-9\n[:space:]\,_]*][\n[:space:]]*).")
 
 (defun ivy-erlang-complete--find-functions (module)
   "Find functions in MODULE."
@@ -323,11 +326,16 @@
           (if (string-match-p re s)
               (message "pass %s regexp" name)
             (message "fail %s regexp must match: %s" name s)))
-        match-data)
+        (-map (lambda (s) (replace-regexp-in-string
+                           ivy-erlang-complete--comment-regexp
+                           "" s)) match-data))
   (-map (lambda (s)
           (if (string-match-p re s)
               (message "fail %s regexp must not match: %s" name s)
-            (message "pass %s regexp" name))) unmatch-data))
+            (message "pass %s regexp" name)))
+        (-map (lambda (s) (replace-regexp-in-string
+                           ivy-erlang-complete--comment-regexp
+                           "" s)) unmatch-data)))
 
 (defconst ivy-erlang-complete--matched-export-data
   '("-export([add/2, hello/0, greet_and_add_two/1])."
