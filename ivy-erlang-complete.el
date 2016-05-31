@@ -151,7 +151,7 @@
       (setq ivy-erlang-complete--local-functions
             (progn
               (let ((pos (point)))
-                (imenu-default-create-index-function)
+                (imenu--make-index-alist)
                 (goto-char pos))
               (-map (lambda (elem) (car elem)) imenu--index-alist))))
   ivy-erlang-complete--local-functions)
