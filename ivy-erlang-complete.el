@@ -75,7 +75,9 @@
          (pos (point)))
     (with-current-buffer (get-buffer-create new-buf)
       (insert content)
-      (while (string-match ivy-erlang-complete--comment-regexp (buffer-substring-no-properties (point-min) (point-max)))
+      (while (string-match ivy-erlang-complete--comment-regexp
+                           (buffer-substring-no-properties
+                            (point-min) (point-max)))
         (replace-match (make-string (length (match-string 0)) ?\ )))
       (goto-char pos))
     new-buf))
