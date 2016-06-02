@@ -103,7 +103,7 @@ This is my emacs config for erlang developement:
              (define-key erlang-mode-map (kbd "C-:")
                'ivy-erlang-complete)
              (define-key erlang-mode-map (kbd "C-c C-h")
-               'ivy-erlang-complete-reparse)
+               'ivy-erlang-complete-show-doc-at-point)
              (define-key erlang-mode-map (kbd "C-c C-e")
                (lambda ()
                  (interactive)
@@ -139,6 +139,9 @@ sensitive completions for:
 * record names
 * record fields
 * macros names
+
+And also can show documentation for functions from standart library in
+your browser.
 
 ![gif](https://github.com/s-kostyaev/ivy-erlang-complete/raw/master/try.gif)
 

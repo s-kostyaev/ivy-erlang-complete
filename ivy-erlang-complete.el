@@ -59,6 +59,33 @@
 (defvar ivy-erlang-complete--comment-regexp
   "%.*$")
 
+;;;###autoload
+(defun ivy-erlang-complete-show-doc-at-point ()
+  "Show doc for function from standart library."
+  (interactive)
+  (let* ((erl-thing (erlang-get-function-under-point))
+         (module (car erl-thing))
+         (function (car (cdr erl-thing)))
+         (arity (erlang-get-function-arity))
+         (candidates (-map (lambda (s) (concat module ":" s))
+                      (ivy-erlang-complete--find-functions module))))
+    (if (not module)
+        (message "module at point not found")
+      (ivy-read "Counsel-erl cand:" candidates
+                :require-match t
+                :initial-input (if (not arity)
+                                   (concat module ":" function)
+                                 (concat module ":" function "/"
+                                         (format "%d" arity)))
+                :action (lambda (s)
+                          (let ((result (s-split "[:/]" s)))
+                            (browse-url
+                             (format
+                              "http://erlang.org/doc/man/%s.html#%s-%s"
+                              (nth 0 result)
+                              (nth 1 result)
+                              (nth 2 result)))))))))
+
 ;; For test eval this
 ;; (progn
 ;;  (load-file "/home/feofan/.emacs.d/ivy-erlang-complete/ivy-erlang-complete.el")
