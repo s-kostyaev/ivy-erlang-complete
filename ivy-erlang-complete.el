@@ -22,7 +22,7 @@
 
 ;;; Commentary:
 
-;; `ivy-erlang-complete' is erlang completion package with `ivy' as frontend.
+;; `ivy-erlang-complete' is context sensitive erlang completion package with `ivy' as frontend.
 
 ;;; Code:
 (require 'ivy)
