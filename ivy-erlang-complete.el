@@ -100,13 +100,16 @@
          (new-buf (concat "*" old-buf "*"))
          (content (buffer-substring-no-properties (point-min) (point-max)))
          (pos (point)))
+    (if (buffer-live-p new-buf)
+     (kill-buffer new-buf))
     (with-current-buffer (get-buffer-create new-buf)
+      (insert "\n")
       (insert content)
       (while (string-match ivy-erlang-complete--comment-regexp
                            (buffer-substring-no-properties
                             (point-min) (point-max)))
         (replace-match (make-string (length (match-string 0)) ?\ )))
-      (goto-char pos))
+      (goto-char (+ pos 1)))
     new-buf))
 
 (defun ivy-erlang-complete--find-functions (module)
