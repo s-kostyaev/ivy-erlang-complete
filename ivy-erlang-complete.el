@@ -94,6 +94,7 @@
 (defvar ivy-erlang-complete--export-regexp
   "-export([[:space:]\n]*\\[[\n[:space:]]*[a-z/0-9\n[:space:]\,_]*][\n[:space:]]*).")
 
+(defvar-local last-erlang-comment nil)
 (defun copy-buffer-no-comments ()
   "Copy current buffer to new one with removing comments."
   (let* ((old-buf (buffer-name))
@@ -103,13 +104,12 @@
     (if (buffer-live-p new-buf)
      (kill-buffer new-buf))
     (with-current-buffer (get-buffer-create new-buf)
-      (insert "\n")
       (insert content)
-      (while (string-match ivy-erlang-complete--comment-regexp
-                           (buffer-substring-no-properties
-                            (point-min) (point-max)))
+      (goto-char (point-min))
+      (while (search-forward-regexp
+              ivy-erlang-complete--comment-regexp last-erlang-comment t)
         (replace-match (make-string (length (match-string 0)) ?\ )))
-      (goto-char (+ pos 1)))
+      (goto-char pos))
     new-buf))
 
 (defun ivy-erlang-complete--find-functions (module)
