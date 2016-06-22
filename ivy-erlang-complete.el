@@ -253,7 +253,7 @@
 
 (defun ivy-erlang-complete--get-record-fields (record)
   "Return list of RECORD fields."
-  (-map (lambda (s) (concat s " = "))
+  (-map (lambda (s) (if (not (s-contains? "=" s)) (concat s " = ") s))
         (gethash record ivy-erlang-complete-records)))
 
 (defun ivy-erlang-complete--extract-macros (file)
