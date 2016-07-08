@@ -1,0 +1,47 @@
+#!/usr/bin/env escript
+
+usage() ->
+    io:format("usage: parse-record record\n"),
+    halt(1).
+
+parse_type({type,_,union,List}) ->
+    lists:foldl(fun(T,Acc) -> [parse_type(T) | Acc] end, [], List);
+parse_type({type,_,record,[{_,_,Name}]}) ->
+    unicode:characters_to_binary(io_lib:format("#~p{}}",[Name]));
+parse_type({type,_,Name,_}) ->
+    unicode:characters_to_list(io_lib:format("~p()",[Name]));
+parse_type({atom,_,Atom}) ->
+    Atom;
+parse_type(Type) ->
+    io:format("Can't parse type: ~p~n",[Type]),
+    halt(1).
+
+parse_field({record_field,_,{_,_,Name}}, Acc) ->
+    [{Name} | Acc];
+parse_field({record_field,_,{_,_,Name},_}, Acc) ->
+    [{Name} | Acc];
+parse_field({typed_record_field,{record_field,_,{_,_,Name},_}, Type}, Acc) ->
+    [{Name, parse_type(Type)} | Acc];
+parse_field({typed_record_field, {record_field,_,{_,_,Name}}, Type}, Acc) ->
+    [{Name, parse_type(Type)} | Acc];
+parse_field(Field,_) ->
+    io:format("Can't parse field: ~p~n",[Field]),
+    halt(1).
+
+parse_fields(List) ->
+    lists:foldl(fun(F,Acc) -> parse_field(F,Acc) end,[],List).
+
+main([String]) ->
+    try
+        {ok, Tokens, _} = erl_scan:string(String),
+        {ok,{attribute,_,record,
+             {RecordName, FieldList}}} = erl_parse:parse(Tokens),
+        io:format("(~s ~p)", [RecordName, parse_fields(FieldList)])
+    catch
+        _:E ->
+            io:format("~p~n",[E]),
+            usage()
+    end;
+main(_) ->
+    usage().
+
