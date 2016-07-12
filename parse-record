@@ -5,41 +5,44 @@ usage() ->
     halt(1).
 
 parse_type({type,_,union,List}) ->
-    lists:foldl(fun(T,Acc) -> [parse_type(T) | Acc] end, [], List);
+    TypeUnion = lists:foldl(fun(T,Acc) -> io_lib:format("~ts ~ts", [Acc, parse_type(T)]) end, "", List),
+    io_lib:format("(~ts)", [TypeUnion]);
 parse_type({type,_,record,[{_,_,Name}]}) ->
-    unicode:characters_to_binary(io_lib:format("#~p{}}",[Name]));
+    io_lib:format("\"#~ts{}\"",[Name]);
 parse_type({type,_,Name,_}) ->
-    unicode:characters_to_list(io_lib:format("~p()",[Name]));
+    io_lib:format("\"~ts()\"",[Name]);
+parse_type({atom,_,undefined}) ->
+    "";
 parse_type({atom,_,Atom}) ->
-    Atom;
+    io_lib:format("~ts", [Atom]);
 parse_type(Type) ->
     io:format("Can't parse type: ~p~n",[Type]),
     halt(1).
 
 parse_field({record_field,_,{_,_,Name}}, Acc) ->
-    [{Name} | Acc];
+    io_lib:format("(~ts) ~ts", [Name, Acc]);
 parse_field({record_field,_,{_,_,Name},_}, Acc) ->
-    [{Name} | Acc];
+    io_lib:format("(~ts) ~ts", [Name, Acc]);
 parse_field({typed_record_field,{record_field,_,{_,_,Name},_}, Type}, Acc) ->
-    [{Name, parse_type(Type)} | Acc];
+    io_lib:format("(~ts ~ts) ~ts", [Name, parse_type(Type), Acc]);
 parse_field({typed_record_field, {record_field,_,{_,_,Name}}, Type}, Acc) ->
-    [{Name, parse_type(Type)} | Acc];
+    io_lib:format("(~ts ~ts) ~ts", [Name, parse_type(Type), Acc]);
 parse_field(Field,_) ->
     io:format("Can't parse field: ~p~n",[Field]),
     halt(1).
 
 parse_fields(List) ->
-    lists:foldl(fun(F,Acc) -> parse_field(F,Acc) end,[],List).
+    lists:foldl(fun(F,Acc) -> parse_field(F,Acc) end,"",List).
 
 main([String]) ->
     try
         {ok, Tokens, _} = erl_scan:string(String),
         {ok,{attribute,_,record,
              {RecordName, FieldList}}} = erl_parse:parse(Tokens),
-        io:format("(~s ~p)", [RecordName, parse_fields(FieldList)])
+        io:format("(~ts ~ts)", [RecordName, unicode:characters_to_list(parse_fields(FieldList))])
     catch
         _:E ->
-            io:format("~p~n",[E]),
+            io:format("~tp~n",[E]),
             usage()
     end;
 main(_) ->
