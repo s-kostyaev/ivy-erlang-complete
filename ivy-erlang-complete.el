@@ -270,7 +270,7 @@
                    (shell-command-to-string
                     (s-join " "
                             (list
-                             "find ~/chronica -name" file
+                             "find" ivy-erlang-complete-project-root "-name" file
                              "| xargs grep -e 'define('"))))))))
 
 (defun ivy-erlang-complete--get-macros ()
