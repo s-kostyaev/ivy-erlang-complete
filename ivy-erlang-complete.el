@@ -161,8 +161,6 @@
 
 (defun ivy-erlang-complete--parse-record (record)
   "Parse RECORD and set it accessible in current buffer."
-  (if (not ivy-erlang-complete-records)
-      (setq ivy-erlang-complete-records (make-hash-table :test 'equal)))
   (let ((matched
          (-map 's-trim
                (-drop 1 (s-match "-record(\\([^,]+\\),[^{]*{\\(.*\\)}*."
@@ -226,6 +224,8 @@
         (setq ivy-erlang-complete-macros nil)
         (ivy-erlang-complete--get-macros)
         (setq ivy-erlang-complete-records nil)
+        (if (not ivy-erlang-complete-records)
+            (setq ivy-erlang-complete-records (make-hash-table :test 'equal)))
         (-map
          'ivy-erlang-complete--parse-record
          (-flatten
