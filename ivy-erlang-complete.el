@@ -60,6 +60,17 @@
   "%.*$")
 
 ;;;###autoload
+(defun ivy-erlang-complete-autosetup-project-root ()
+  "Automatically setup erlang project root."
+  (interactive)
+  (setq-local ivy-erlang-complete-project-root
+              (expand-file-name
+                 (locate-dominating-file
+                  default-directory
+                  "deps")))
+  ivy-erlang-complete-project-root)
+
+;;;###autoload
 (defun ivy-erlang-complete-show-doc-at-point ()
   "Show doc for function from standart library."
   (interactive)
