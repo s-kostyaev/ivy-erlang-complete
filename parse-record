@@ -14,19 +14,19 @@ parse_type({type,_,Name,_}) ->
 parse_type({atom,_,undefined}) ->
     "";
 parse_type({atom,_,Atom}) ->
-    io_lib:format("~ts", [Atom]);
+    io_lib:format("\"~ts\"", [Atom]);
 parse_type(Type) ->
     io:format("Can't parse type: ~p~n",[Type]),
     halt(1).
 
 parse_field({record_field,_,{_,_,Name}}, Acc) ->
-    io_lib:format("(~ts) ~ts", [Name, Acc]);
+    io_lib:format("(\"~ts\") ~ts", [Name, Acc]);
 parse_field({record_field,_,{_,_,Name},_}, Acc) ->
-    io_lib:format("(~ts) ~ts", [Name, Acc]);
+    io_lib:format("(\"~ts\") ~ts", [Name, Acc]);
 parse_field({typed_record_field,{record_field,_,{_,_,Name},_}, Type}, Acc) ->
-    io_lib:format("(~ts ~ts) ~ts", [Name, parse_type(Type), Acc]);
+    io_lib:format("(\"~ts\" ~ts) ~ts", [Name, parse_type(Type), Acc]);
 parse_field({typed_record_field, {record_field,_,{_,_,Name}}, Type}, Acc) ->
-    io_lib:format("(~ts ~ts) ~ts", [Name, parse_type(Type), Acc]);
+    io_lib:format("(\"~ts\" ~ts) ~ts", [Name, parse_type(Type), Acc]);
 parse_field(Field,_) ->
     io:format("Can't parse field: ~p~n",[Field]),
     halt(1).
@@ -39,7 +39,7 @@ main([String]) ->
         {ok, Tokens, _} = erl_scan:string(String),
         {ok,{attribute,_,record,
              {RecordName, FieldList}}} = erl_parse:parse(Tokens),
-        io:format("(~ts ~ts)", [RecordName, unicode:characters_to_list(parse_fields(FieldList))])
+        io:format("(\"~ts\" ~ts)", [RecordName, unicode:characters_to_list(parse_fields(FieldList))])
     catch
         _:E ->
             io:format("~tp~n",[E]),
