@@ -185,6 +185,14 @@
                           (-map 's-trim (s-split "," (car (cdr matched)))))
                  ivy-erlang-complete-records)
       )))
+;; (defun new-parse-record (record)
+;;   "Asyncronously parse RECORD by escript."
+;;   (async-start
+;;    `(lambda ()
+;;      (shell-command-to-string
+;;       (concat
+;;        "/home/feofan/ivy-erlang-complete/parse-record \"\"\"" ,record "\"\"\"")))
+;;    (lambda (res) (message "%s" (read res)))))
 
 (defun ivy-erlang-complete--find-local-functions ()
   "Find all local functions."
