@@ -317,21 +317,24 @@
   (if (ivy-erlang-complete-export-at-point)
       (progn
         (ivy-completion-in-region-action candidate))
-   (if (string-match "\\([^/]+\\)/\\([0-9]+\\)" candidate)
-       (let ((arity (string-to-number
-                     (substring candidate
-                                (match-beginning 2) (match-end 2)))))
-         (ivy-completion-in-region-action
-          (concat (replace-regexp-in-string "/[0-9]+" "" candidate)
-                  "("
-                  (make-string (if (= 0 arity) arity (- arity 1)) ?,)
-                  ")"))
-         (goto-char (- (point) arity)))
-     (if (string-match ".*{}$" candidate)
-         (progn
-           (ivy-completion-in-region-action candidate)
-           (goto-char (- (point) 1)))
-       (ivy-completion-in-region-action candidate)))))
+    (if (and (s-prefix? "?" candidate)
+             (thing-at-point-looking-at "\?['A-Za-z0-9_:]+"))
+        (ivy-completion-in-region-action (s-chop-prefix "?" candidate))
+      (if (string-match "\\([^/]+\\)/\\([0-9]+\\)" candidate)
+          (let ((arity (string-to-number
+                        (substring candidate
+                                   (match-beginning 2) (match-end 2)))))
+            (ivy-completion-in-region-action
+             (concat (replace-regexp-in-string "/[0-9]+" "" candidate)
+                     "("
+                     (make-string (if (= 0 arity) arity (- arity 1)) ?,)
+                     ")"))
+            (goto-char (- (point) arity)))
+        (if (string-match ".*{}$" candidate)
+            (progn
+              (ivy-completion-in-region-action candidate)
+              (goto-char (- (point) 1)))
+          (ivy-completion-in-region-action candidate))))))
 
 ;;;###autoload
 (defun ivy-erlang-complete ()
