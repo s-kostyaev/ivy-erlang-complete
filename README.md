@@ -92,16 +92,25 @@ This is my emacs config for erlang developement:
 (need-package 'ivy-erlang-complete)
 (require 'ivy-erlang-complete)
 (defvar erlang-mode-map)
+
+(defun force-reindex-erlang-project ()
+  "Force update erlang project index."
+  (interactive)
+  (message "%s" (shell-command-to-string
+                 (concat "find " ivy-erlang-complete-project-root
+                         " -type d -name .opengrok -exec rm -fr {} +")))
+  (eopengrok-make-index-with-enable-projects ivy-erlang-complete-project-root))
+
 (defun my-erlang-hook ()
   "Setup for erlang."
   (let ((project-root (ivy-erlang-complete-autosetup-project-root)))
-      (async-start (eopengrok-make-index-with-enable-projects
-                    project-root))
       (fix-erlang-project-code-path project-root)
       (fix-erlang-project-includes project-root))
   (ivy-erlang-complete-reparse)
   (define-key erlang-mode-map (kbd "C-:")
     'ivy-erlang-complete)
+  (define-key erlang-mode-map (kbd "C-c C-f")
+    #'force-reindex-erlang-project)
   (define-key erlang-mode-map (kbd "C-c C-h")
     'ivy-erlang-complete-show-doc-at-point)
   (define-key erlang-mode-map (kbd "C-c C-e")
