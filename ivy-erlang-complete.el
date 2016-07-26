@@ -349,7 +349,7 @@
   "Erlang completion at point."
   (interactive)
   (let ((thing (ivy-erlang-complete-thing-at-point)))
-   (if (and thing (string-match "\\([^\:]+\\)\:\\([^\:]*\\)" thing))
+   (if (and thing (string-match "#?\\([^\:]+\\)\:\\([^\:]*\\)" thing))
        (let ((erl-prefix (substring thing (match-beginning 1) (match-end 1))))
          (progn
            (setq ivy-erlang-complete-candidates
