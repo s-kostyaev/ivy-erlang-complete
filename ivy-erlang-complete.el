@@ -32,6 +32,8 @@
 (require 'erlang)
 (require 'imenu)
 
+(defconst ivy-erlang-complete--base (file-name-directory load-file-name))
+
 (defvar ivy-erlang-complete-erlang-root "/usr/lib/erlang"
   "Path to erlang root.")
 
@@ -58,6 +60,10 @@
 
 (defvar ivy-erlang-complete--comment-regexp
   "%.*$")
+
+(defun ivy-erlang-complete--executable (name)
+  "Return path to executable with NAME."
+  (concat ivy-erlang-complete--base "bin/" name))
 
 ;;;###autoload
 (defun ivy-erlang-complete-autosetup-project-root ()
