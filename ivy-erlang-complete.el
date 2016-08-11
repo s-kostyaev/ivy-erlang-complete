@@ -6,7 +6,7 @@
 ;; Author: Sergey Kostyaev <feo.me@ya.ru>
 ;; Version: 1.0.0
 ;; Keywords: erlang ivy completion
-;; Package-Requires: ((emacs "24.4") (ivy "0.8.0") (dash "2.12.1") (s "1.11.0") (erlang "20151013.157"))
+;; Package-Requires: ((emacs "24.4") (ivy "0.8.0") (counsel "0.8.0") (dash "2.12.1") (s "1.11.0") (erlang "20151013.157"))
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
 ;; the Free Software Foundation, either version 3 of the License, or
@@ -213,7 +213,7 @@
 
 (defun ivy-erlang-complete-thing-at-point ()
   "Return the erlang thing at point, or nil if none is found."
-  (when (thing-at-point-looking-at "#?['A-Za-z0-9_:]+")
+  (when (thing-at-point-looking-at "\??#?['A-Za-z0-9_:]+")
     (match-string-no-properties 0)))
 
 (defun ivy-erlang-complete-record-at-point ()
@@ -387,13 +387,37 @@
                  (ivy-erlang-complete--find-modules)
                  (ivy-erlang-complete--get-macros)
                  ))))
-       (setq ivy-erlang-complete-predicate thing))))
+       (setq ivy-erlang-complete-predicate (s-chop-prefix "?" thing)))))
   (when (looking-back ivy-erlang-complete-predicate (line-beginning-position))
     (setq ivy-completion-beg (match-beginning 0))
     (setq ivy-completion-end (match-end 0)))
-  (ivy-read "Counsel-erl cand:" ivy-erlang-complete-candidates
+  (ivy-read "erlang cand:" ivy-erlang-complete-candidates
             :initial-input ivy-erlang-complete-predicate
             :action #'ivy-erlang-complete--insert-candidate))
+
+;;;###autoload
+(defun ivy-erlang-complete-find-definition ()
+  "Find erlang definition."
+  (interactive)
+  (let ((thing (ivy-erlang-complete-thing-at-point)))
+    (if (s-contains? ":" thing)
+        (let* ((thing2 (s-split ":" thing))
+               (module (car thing2))
+               (func (car (cdr thing2))))
+          (counsel-ag (concat "^" func"(")
+                      ivy-erlang-complete-project-root
+                      (concat "-a -G " module ".erl") "find definition"))
+      (if (s-prefix? "?" thing)
+          (counsel-ag (concat "^-define(" (s-chop-prefix "?" thing) ",")
+                      ivy-erlang-complete-project-root "-a -G .hrl"
+                      "find definition")
+        (let ((record (ivy-erlang-complete-record-at-point)))
+          (if record (counsel-ag
+                      (concat
+                       "^-record("
+                       (s-chop-prefix "#" (car (s-split "{" record)))",")
+                      ivy-erlang-complete-project-root "-a -G .hrl"
+                      "find definition")))))))
 
 ;;; Testing
 (defun ivy-erlang-complete--test-regexp (name re match-data unmatch-data)
