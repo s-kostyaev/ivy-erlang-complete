@@ -13,21 +13,12 @@ You can now install package `ivy-erlang-complete` from
 [MELPA](https://melpa.org/#/getting-started). Just `M-x`
 `package-install`<kbd>Enter</kbd> `ivy-erlang-complete` <kbd>Enter</kbd>.
 
-Or just put `ivy-erlang-complete.el` to load path. You also need install
-dependencies:
-### Emacs packages (can be installed from [MELPA](https://melpa.org/))
- * `ivy`
- * `s.el`
- * `dash.el`
- 
-If you install this package from [MELPA](https://melpa.org/) all nedded
-emacs packages will be installed automatically.
-
 ### System packages
  * findutils
  * coreutils
  * sed
  * grep
+ * the_silver_searcher (for finding definition & references)
  
 ## Basic setup
 
@@ -35,10 +26,18 @@ For start using you need add to `init.el` something like this:
 
 ``` emacs-lisp
 (require 'ivy-erlang-complete)
-(add-hook 'erlang-mode-hook '(define-key erlang-mode-map (kbd "C-:")
-                               'ivy-erlang-complete))
+(add-hook 'erlang-mode-hook '(progn
+                               (define-key
+                                 erlang-mode-map (kbd "C-c C-r")
+                                 #'ivy-erlang-complete-find-references)
+                               (define-key
+                                 erlang-mode-map (kbd "C-c C-d")
+                                 #'ivy-erlang-complete-find-definition)
+                               (define-key
+                                 erlang-mode-map (kbd "C-:")
+                                 #'ivy-erlang-complete)))
 ;; automatic update completion data after save
-(add-hook 'after-save-hook 'ivy-erlang-complete-reparse)
+(add-hook 'after-save-hook '#ivy-erlang-complete-reparse)
 ```
 
 ### Advanced setup
@@ -48,7 +47,6 @@ features:
 
 * `rebar` for building & testing
 * `flycheck` for on the fly error checking
-* `eopengrok` for code navigation
 
 This is my emacs config for erlang developement:
 
@@ -93,14 +91,6 @@ This is my emacs config for erlang developement:
 (require 'ivy-erlang-complete)
 (defvar erlang-mode-map)
 
-(defun force-reindex-erlang-project ()
-  "Force update erlang project index."
-  (interactive)
-  (message "%s" (shell-command-to-string
-                 (concat "find " ivy-erlang-complete-project-root
-                         " -type d -name .opengrok -exec rm -fr {} +")))
-  (eopengrok-make-index-with-enable-projects ivy-erlang-complete-project-root))
-
 (defun my-erlang-hook ()
   "Setup for erlang."
   (let ((project-root (ivy-erlang-complete-autosetup-project-root)))
@@ -109,34 +99,14 @@ This is my emacs config for erlang developement:
   (ivy-erlang-complete-reparse)
   (define-key erlang-mode-map (kbd "C-:")
     'ivy-erlang-complete)
-  (define-key erlang-mode-map (kbd "C-c C-f")
-    #'force-reindex-erlang-project)
   (define-key erlang-mode-map (kbd "C-c C-h")
     'ivy-erlang-complete-show-doc-at-point)
   (define-key erlang-mode-map (kbd "C-c C-e")
-    #'(lambda ()
-        (interactive)
-        (eopengrok-make-index-with-enable-projects
-         (ivy-erlang-complete-set-project-root))))
+    #'ivy-erlang-complete-set-project-root)
   (define-key erlang-mode-map (kbd "C-c C-d")
-    #'(lambda () (interactive)
-        (if (ivy-erlang-complete-record-at-point)
-            (eopengrok-find-text
-             (concat "\""
-                     (s-replace "#" "record("
-                                (ivy-erlang-complete-thing-at-point))
-                     "\""))
-          (eopengrok-find-definition (ivy-erlang-complete-thing-at-point)))))
+    #'ivy-erlang-complete-find-definition)
   (define-key erlang-mode-map (kbd "C-c C-r")
-    #'(lambda () (interactive)
-        (let ((thing (ivy-erlang-complete-thing-at-point)))
-         (if (and (not (s-matches? ":" thing))
-                  (-reduce (lambda (a b) (or a b))
-                           (-map (lambda (s) (s-prefix? thing s))
-                                   (ivy-erlang-complete--find-local-functions))))
-            (eopengrok-find-reference
-             (concat (file-name-base (buffer-file-name)) ":" thing))
-          (eopengrok-find-reference thing))))))
+    #'ivy-erlang-complete-find-references))
 (add-hook 'erlang-mode-hook #'my-erlang-hook)
 (add-hook 'after-save-hook #'ivy-erlang-complete-reparse)
 ```
@@ -152,8 +122,8 @@ sensitive completions for:
 * record fields
 * macros names
 
-And also can show documentation for functions from standart library in
-your browser.
+And also can find definition and references or show documentation for
+functions from standart library in your browser.
 
 ![gif](https://github.com/s-kostyaev/ivy-erlang-complete/raw/master/try.gif)
 
