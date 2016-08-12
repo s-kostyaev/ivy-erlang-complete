@@ -417,7 +417,13 @@
                        "^-record("
                        (s-chop-prefix "#" (car (s-split "{" record)))",")
                       ivy-erlang-complete-project-root "-a -G .hrl"
-                      "find definition")))))))
+                      "find definition")
+            (if (thing-at-point-looking-at "-behaviour(\\([a-z_]+\\)).")
+                (counsel-ag (concat "^-module(" (match-string-no-properties 1)
+                                    ").")
+                                ivy-erlang-complete-project-root
+                                "-a -G erl$" "find definition")
+              (message "Can't find definition"))))))))
 
 ;;;###autoload
 (defun ivy-erlang-complete-find-references ()
@@ -445,9 +451,21 @@
                   (counsel-ag (concat "#" (match-string-no-properties 1) "{")
                               ivy-erlang-complete-project-root
                               "-a -G rl$" "find references")
-                (counsel-ag (concat (file-name-base (buffer-file-name)) ":" thing)
-                            ivy-erlang-complete-project-root
-                            "-a -G rl$" "find references")))))))))
+                (if (thing-at-point-looking-at "-behaviour(\\([a-z_]+\\)).")
+                    (counsel-ag (concat "^" (match-string-no-properties 0))
+                                ivy-erlang-complete-project-root
+                                "-a -G erl$" "find references")
+                  (if (or (search-forward-regexp (concat "^" thing)
+                                                 (buffer-end 1) t 1)
+                          (search-backward-regexp (concat "^" thing)
+                                                  (buffer-end -1) t 1))
+                      (counsel-ag (concat (file-name-base (buffer-file-name))
+                                          ":" thing)
+                              ivy-erlang-complete-project-root
+                              "-a -G rl$" "find references")
+                    (counsel-ag thing
+                              ivy-erlang-complete-project-root
+                              "-a -G rl$" "find references")))))))))))
 
 ;;; Testing
 (defun ivy-erlang-complete--test-regexp (name re match-data unmatch-data)
