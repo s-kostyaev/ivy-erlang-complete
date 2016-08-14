@@ -139,12 +139,9 @@
     (s-join
      " "
      (list
-      "find" ivy-erlang-complete-project-root ivy-erlang-complete-erlang-root
-      "-name" (concat module ".erl") "| xargs sed -n '/-export(/,/)./p'"
-      "| sed -e '/%/d' | sed -e 's/ //g' | sed -e 's/\\t//g'"
-      "| sed -e '/^$/d' | sed -e '/-export(\\[.*\\])./{ n ; d }'"
-      "| sed -e 's/-export.*(\\\[//g' | sed -e 's/\\\]).//g'"
-      "| sed 's/\\\,/\\\n/g' | sed '/^$/d'")))
+      (ivy-erlang-complete--executable "exported-funcs.sh")
+      module
+      ivy-erlang-complete-project-root ivy-erlang-complete-erlang-root)))
    t))
 
 (defun ivy-erlang-complete--find-modules ()
