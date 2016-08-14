@@ -15,6 +15,10 @@ parse_type({atom,_,undefined}) ->
     "";
 parse_type({atom,_,Atom}) ->
     io_lib:format("\"~ts\"", [Atom]);
+parse_type({remote_type,_,[{atom,_,Module},{atom,_,Type},[]]}) ->
+    io_lib:format("\"~ts:~ts()\"",[Module, Type]);
+parse_type({user_type,_,Name,[]}) ->
+    io_lib:format("\"~ts()\"",[Name]);
 parse_type(Type) ->
     io:format("Can't parse type: ~p~n",[Type]),
     halt(1).

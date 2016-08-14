@@ -71,9 +71,9 @@
   (interactive)
   (setq-local ivy-erlang-complete-project-root
               (expand-file-name
-                 (locate-dominating-file
-                  default-directory
-                  "deps")))
+               (locate-dominating-file
+                default-directory
+                "deps")))
   ivy-erlang-complete-project-root)
 
 ;;;###autoload
@@ -85,7 +85,7 @@
          (function (car (cdr erl-thing)))
          (arity (erlang-get-function-arity))
          (candidates (-map (lambda (s) (concat module ":" s))
-                      (ivy-erlang-complete--find-functions module))))
+                           (ivy-erlang-complete--find-functions module))))
     (if (not module)
         (message "module at point not found")
       (ivy-read "Counsel-erl cand:" candidates
@@ -119,7 +119,7 @@
          (content (buffer-substring-no-properties (point-min) (point-max)))
          (pos (point)))
     (if (buffer-live-p new-buf)
-     (kill-buffer new-buf))
+        (kill-buffer new-buf))
     (with-current-buffer (get-buffer-create new-buf)
       (insert content)
       (goto-char (point-min))
@@ -133,9 +133,11 @@
   "Find functions in MODULE."
   (if (not ivy-erlang-complete-project-root)
       (ivy-erlang-complete-set-project-root))
-  (s-split "\n"
+  (s-split
+   "\n"
    (shell-command-to-string
-    (s-join " "
+    (s-join
+     " "
      (list
       "find" ivy-erlang-complete-project-root ivy-erlang-complete-erlang-root
       "-name" (concat module ".erl") "| xargs sed -n '/-export(/,/)./p'"
@@ -143,63 +145,44 @@
       "| sed -e '/^$/d' | sed -e '/-export(\\[.*\\])./{ n ; d }'"
       "| sed -e 's/-export.*(\\\[//g' | sed -e 's/\\\]).//g'"
       "| sed 's/\\\,/\\\n/g' | sed '/^$/d'")))
-    t))
+   t))
 
 (defun ivy-erlang-complete--find-modules ()
   "Find functions in MODULE."
   (if (not ivy-erlang-complete-project-root)
       (ivy-erlang-complete-set-project-root))
   (-map (lambda (s) (concat s ":"))
-   (s-split "\n"
-            (shell-command-to-string
-             (s-join " "
-                     (list
-                      "find" ivy-erlang-complete-project-root
-                      ivy-erlang-complete-erlang-root
-                      "-iname '*.erl' | xargs basename -a |"
-                      "sed -e 's/\\.erl//g'")))
-            t)))
+        (s-split "\n"
+                 (shell-command-to-string
+                  (s-join " "
+                          (list
+                           "find" ivy-erlang-complete-project-root
+                           ivy-erlang-complete-erlang-root
+                           "-iname '*.erl' | xargs basename -a |"
+                           "sed -e 's/\\.erl//g'")))
+                 t)))
 
 (defun ivy-erlang-complete--extract-records (file)
   "Extract all records from FILE."
   (if (not ivy-erlang-complete-project-root)
       (ivy-erlang-complete-set-project-root))
-  (-map (lambda (s) (concat (replace-regexp-in-string "=[^\n]+\n" ",\n"
-                             (replace-regexp-in-string "::[^\n]+\n?" ",\n" s))
-                            "})."))
-   (s-split
-    ")\\."
-    (shell-command-to-string
-     (s-join " "
-             (list "find" ivy-erlang-complete-project-root "-name" file "|"
-                   "xargs" "sed" "-n" "'/-record(/,/})./p'" "|"
-                   "sed -e 's/%.*//g'")))
-    t)))
+  (-map (lambda (s) (concat s ")."))
+        (s-split
+         ")\\."
+         (shell-command-to-string
+          (s-join " "
+                  (list "find" ivy-erlang-complete-project-root "-name" file "|"
+                        "xargs" "sed" "-n" "'/-record(/,/})./p'")))
+         t)))
 
 (defun ivy-erlang-complete--parse-record (record)
-  "Parse RECORD and set it accessible in current buffer."
-  (let ((matched
-         (-map 's-trim
-               (-drop 1 (s-match "-record(\\([^,]+\\),[^{]*{\\(.*\\)}*."
-                                 (s-collapse-whitespace record))))))
-    (if matched
-        (puthash (car matched)
-                 (-remove (lambda (s)
-                            (or (string-empty-p s)
-                                (s-prefix? "|" s)
-                                (string-match-p "^[})[:space:]=]+$" s)))
-                          (-map 's-trim (s-split "," (car (cdr matched)))))
-                 ivy-erlang-complete-records)
-      )))
-;; (defun new-parse-record (record)
-;;   "Asyncronously parse RECORD by escript."
-;;   (async-start
-;;    `(lambda ()
-;;      (shell-command-to-string
-;;       (concat
-;;        "/home/feofan/ivy-erlang-complete/parse-record \"\"\"" ,record "\"\"\"")))
-;;    (lambda (res) (message "%s" (read res)))))
-
+  "Parse RECORD and set it acessable in current buffer."
+  (let ((res (read (shell-command-to-string
+                    (concat
+                     (ivy-erlang-complete--executable "parse-record")
+                     " \"\"\"" record "\"\"\"")))))
+    (ignore-errors (puthash (car res)
+                            (cdr res) ivy-erlang-complete-records))))
 (defun ivy-erlang-complete--find-local-functions ()
   "Find all local functions."
   (if (not ivy-erlang-complete--local-functions)
@@ -224,19 +207,19 @@
 (defun ivy-erlang-complete-export-at-point ()
   "Return the erlang export at point, or nil if none is found."
   (with-current-buffer (get-buffer-create (copy-buffer-no-comments))
-   (when (thing-at-point-looking-at
-          ivy-erlang-complete--export-regexp
-          500)
-     (let ((result (match-string-no-properties 0)))
-       (kill-buffer)
-       result))))
+    (when (thing-at-point-looking-at
+           ivy-erlang-complete--export-regexp
+           500)
+      (let ((result (match-string-no-properties 0)))
+        (kill-buffer)
+        result))))
 
 (defun ivy-erlang-complete--get-included-files ()
   "Get included files for current buffer."
   (-map (lambda (m) (concat (file-name-base (s-trim (car (-drop 1 m)))) ".hrl"))
-         (s-match-strings-all
-          "-include[_lib]*([:space:]*\"\\([^\"]+\\)"
-          (buffer-substring-no-properties 1 (point-max)))))
+        (s-match-strings-all
+         "-include[_lib]*([:space:]*\"\\([^\"]+\\)"
+         (buffer-substring-no-properties 1 (point-max)))))
 
 ;;;###autoload
 (defun ivy-erlang-complete-reparse ()
@@ -248,23 +231,19 @@
         (ivy-erlang-complete--find-local-functions)
         (setq ivy-erlang-complete-macros nil)
         (ivy-erlang-complete--get-macros)
-        (setq ivy-erlang-complete-records nil)
-        (if (not ivy-erlang-complete-records)
-            (setq ivy-erlang-complete-records (make-hash-table :test 'equal)))
-        (-map
-         'ivy-erlang-complete--parse-record
-         (-flatten
-          (-map 'ivy-erlang-complete--extract-records
-                (ivy-erlang-complete--get-included-files))))
-        (-map
-         'ivy-erlang-complete--parse-record
-         (ivy-erlang-complete--extract-records (concat
-                                                (file-name-base
-                                                 (buffer-file-name))
-                                                "."
-                                                (file-name-extension
-                                                 (buffer-file-name)))))
+        (ivy-erlang-complete--parse-records)
         (message "Erlang completions updated"))))
+
+(defun ivy-erlang-complete--parse-records ()
+  "Parse erlang records in FILE."
+  (setq ivy-erlang-complete-records (make-hash-table :test 'equal))
+  (-map
+   'ivy-erlang-complete--parse-record
+   (-flatten
+    (-map 'ivy-erlang-complete--extract-records
+          (append (ivy-erlang-complete--get-included-files)
+                  (list (buffer-file-name))))))
+  ivy-erlang-complete-records)
 
 (defun ivy-erlang-complete--get-record-names ()
   "Return list of acceptable record names."
@@ -278,7 +257,15 @@
 
 (defun ivy-erlang-complete--get-record-fields (record)
   "Return list of RECORD fields."
-  (-map (lambda (s) (if (not (s-contains? "=" s)) (concat s " = ") s))
+  (-map (lambda (s) (concat (car s) " = "
+                            (if (cdr s)
+                                (let ((type (concat
+                                             "\t\t:: "
+                                             (s-join " | "
+                                                     (-flatten (cdr s))))))
+                                  (set-text-properties 0 (length type)
+                                                       '(face success) type)
+                                  type))))
         (gethash record ivy-erlang-complete-records)))
 
 (defun ivy-erlang-complete--extract-macros (file)
@@ -328,66 +315,71 @@
 
 (defun ivy-erlang-complete--insert-candidate (candidate)
   "Insert CANDIDATE at point."
-  (if (ivy-erlang-complete-export-at-point)
-      (progn
-        (ivy-completion-in-region-action candidate))
-    (if (and (s-prefix? "?" candidate)
-             (thing-at-point-looking-at "\?['A-Za-z0-9_:]+"))
-        (ivy-completion-in-region-action (s-chop-prefix "?" candidate))
-      (if (string-match "\\([^/]+\\)/\\([0-9]+\\)" candidate)
-          (let ((arity (string-to-number
-                        (substring candidate
-                                   (match-beginning 2) (match-end 2)))))
-            (ivy-completion-in-region-action
-             (concat (replace-regexp-in-string "/[0-9]+" "" candidate)
-                     "("
-                     (make-string (if (= 0 arity) arity (- arity 1)) ?,)
-                     ")"))
-            (goto-char (- (point) arity)))
-        (if (string-match ".*{}$" candidate)
-            (progn
-              (ivy-completion-in-region-action candidate)
-              (goto-char (- (point) 1)))
-          (ivy-completion-in-region-action candidate))))))
+  (if (string-match "\\(.*\\)\t\t\\(::.*\\)" candidate)
+      (let ((type (match-string-no-properties 2 candidate)))
+        (progn
+          (ivy-erlang-complete--insert-candidate
+           (match-string-no-properties 1 candidate))
+          (message type)))
+    (if (ivy-erlang-complete-export-at-point)
+        (ivy-completion-in-region-action candidate)
+      (if (and (s-prefix? "?" candidate)
+               (thing-at-point-looking-at "\?['A-Za-z0-9_:]+"))
+          (ivy-completion-in-region-action (s-chop-prefix "?" candidate))
+        (if (string-match "\\([^/]+\\)/\\([0-9]+\\)" candidate)
+            (let ((arity (string-to-number
+                          (substring candidate
+                                     (match-beginning 2) (match-end 2)))))
+              (ivy-completion-in-region-action
+               (concat (replace-regexp-in-string "/[0-9]+" "" candidate)
+                       "("
+                       (make-string (if (= 0 arity) arity (- arity 1)) ?,)
+                       ")"))
+              (goto-char (- (point) arity)))
+          (if (string-match ".*{}$" candidate)
+              (progn
+                (ivy-completion-in-region-action candidate)
+                (goto-char (- (point) 1)))
+            (ivy-completion-in-region-action candidate)))))))
 
 ;;;###autoload
 (defun ivy-erlang-complete ()
   "Erlang completion at point."
   (interactive)
   (let ((thing (ivy-erlang-complete-thing-at-point)))
-   (if (and thing (string-match "#?\\([^\:]+\\)\:\\([^\:]*\\)" thing))
-       (let ((erl-prefix (substring thing (match-beginning 1) (match-end 1))))
-         (progn
-           (setq ivy-erlang-complete-candidates
-                 (ivy-erlang-complete--find-functions
-                  erl-prefix))
-           (setq ivy-erlang-complete-predicate
-                 (string-remove-prefix (concat erl-prefix ":") thing))))
-     (progn
-       (if (ivy-erlang-complete-export-at-point)
-           (progn
-             (setq ivy-erlang-complete-candidates
-                  (ivy-erlang-complete--find-local-functions)))
-        (if
-            (ivy-erlang-complete-record-at-point)
+    (if (and thing (string-match "#?\\([^\:]+\\)\:\\([^\:]*\\)" thing))
+        (let ((erl-prefix (substring thing (match-beginning 1) (match-end 1))))
+          (progn
+            (setq ivy-erlang-complete-candidates
+                  (ivy-erlang-complete--find-functions
+                   erl-prefix))
+            (setq ivy-erlang-complete-predicate
+                  (string-remove-prefix (concat erl-prefix ":") thing))))
+      (progn
+        (if (ivy-erlang-complete-export-at-point)
+            (progn
+              (setq ivy-erlang-complete-candidates
+                    (ivy-erlang-complete--find-local-functions)))
+          (if
+              (ivy-erlang-complete-record-at-point)
+              (setq ivy-erlang-complete-candidates
+                    (append
+                     (ivy-erlang-complete--get-record-fields
+                      (buffer-substring-no-properties
+                       (match-beginning 1) (match-end 1)))
+                     (ivy-erlang-complete--find-local-functions)
+                     (ivy-erlang-complete--get-record-names)
+                     (ivy-erlang-complete--find-modules)
+                     (ivy-erlang-complete--get-macros)
+                     ))
             (setq ivy-erlang-complete-candidates
                   (append
-                   (ivy-erlang-complete--get-record-fields
-                    (buffer-substring-no-properties
-                     (match-beginning 1) (match-end 1)))
                    (ivy-erlang-complete--find-local-functions)
                    (ivy-erlang-complete--get-record-names)
                    (ivy-erlang-complete--find-modules)
                    (ivy-erlang-complete--get-macros)
-                   ))
-          (setq ivy-erlang-complete-candidates
-                (append
-                 (ivy-erlang-complete--find-local-functions)
-                 (ivy-erlang-complete--get-record-names)
-                 (ivy-erlang-complete--find-modules)
-                 (ivy-erlang-complete--get-macros)
-                 ))))
-       (setq ivy-erlang-complete-predicate (s-chop-prefix "?" thing)))))
+                   ))))
+        (setq ivy-erlang-complete-predicate (s-chop-prefix "?" thing)))))
   (when (looking-back ivy-erlang-complete-predicate (line-beginning-position))
     (setq ivy-completion-beg (match-beginning 0))
     (setq ivy-completion-end (match-end 0)))
@@ -421,8 +413,8 @@
             (if (thing-at-point-looking-at "-behaviour(\\([a-z_]+\\)).")
                 (counsel-ag (concat "^-module(" (match-string-no-properties 1)
                                     ").")
-                                ivy-erlang-complete-project-root
-                                "-a -G erl$" "find definition")
+                            ivy-erlang-complete-project-root
+                            "-a -G erl$" "find definition")
               (message "Can't find definition"))))))))
 
 ;;;###autoload
@@ -459,10 +451,12 @@
                              (is-function
                               (progn
                                 (goto-char (line-beginning-position))
-                                (or (search-forward-regexp (concat "^" thing "(")
-                                                           (point-max) t 1)
-                                    (search-backward-regexp (concat "^" thing "(")
-                                                            (point-min) t 1)))))
+                                (or (search-forward-regexp
+                                     (concat "^" thing "(")
+                                     (point-max) t 1)
+                                    (search-backward-regexp
+                                     (concat "^" thing "(")
+                                     (point-min) t 1)))))
                         (goto-char pos)
                         is-function)
                       (counsel-ag (concat (file-name-base (buffer-file-name))
