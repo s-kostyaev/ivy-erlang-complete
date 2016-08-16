@@ -6,7 +6,7 @@
 ;; Author: Sergey Kostyaev <feo.me@ya.ru>
 ;; Version: 1.0.0
 ;; Keywords: erlang ivy completion
-;; Package-Requires: ((emacs "24.4") (ivy "0.8.0") (counsel "0.8.0") (dash "2.12.1") (s "1.11.0") (erlang "20151013.157"))
+;;
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
 ;; the Free Software Foundation, either version 3 of the License, or
@@ -60,6 +60,9 @@
 
 (defvar ivy-erlang-complete--comment-regexp
   "%.*$")
+
+(defvar-local ivy-erlang-complete--parsing-in-progress nil
+  "Sync variable for async parsing.")
 
 (defun ivy-erlang-complete--executable (name)
   "Return path to executable with NAME."
@@ -228,8 +231,7 @@
         (ivy-erlang-complete--find-local-functions)
         (setq ivy-erlang-complete-macros nil)
         (ivy-erlang-complete--get-macros)
-        (ivy-erlang-complete--parse-records)
-        (message "Erlang completions updated"))))
+        (ivy-erlang-complete--async-parse-records))))
 
 (defun ivy-erlang-complete--parse-records ()
   "Parse erlang records in FILE."
@@ -242,28 +244,57 @@
                   (list (buffer-file-name))))))
   ivy-erlang-complete-records)
 
+(defun ivy-erlang-complete--async-parse-records ()
+  "Async parse erlang records for current buffer."
+  (if (not ivy-erlang-complete--parsing-in-progress)
+      (progn
+        (setq ivy-erlang-complete--parsing-in-progress t)
+        (async-start
+         `(lambda ()
+            ,(async-inject-variables "load-path")
+            (require 'ivy-erlang-complete)
+            (find-file ,(buffer-file-name))
+            (setq ivy-erlang-complete-project-root ,ivy-erlang-complete-project-root)
+            (setq eval-expression-print-length nil)
+            (setq print-length nil)
+            (prin1-to-string (ivy-erlang-complete--parse-records))
+            )
+         `(lambda (res)
+            (switch-to-buffer ,(buffer-name))
+            (setq ivy-erlang-complete-records (read res))
+            (setq ivy-erlang-complete--parsing-in-progress nil)
+            (message "Erlang completions updated"))))))
+
 (defun ivy-erlang-complete--get-record-names ()
   "Return list of acceptable record names."
   (if (not ivy-erlang-complete-records)
-      (ivy-erlang-complete-reparse))
-  (setq ivy-erlang-complete--record-names nil)
-  (maphash (lambda (key _)
-             (push (concat "#" key "{}") ivy-erlang-complete--record-names))
-           ivy-erlang-complete-records)
-  ivy-erlang-complete--record-names)
+      (progn
+        (ivy-erlang-complete-reparse)
+        (message "Please wait for record parsing")
+        nil)
+    (setq ivy-erlang-complete--record-names nil)
+    (maphash (lambda (key _)
+               (push (concat "#" key "{}") ivy-erlang-complete--record-names))
+             ivy-erlang-complete-records)
+    ivy-erlang-complete--record-names))
 
 (defun ivy-erlang-complete--get-record-fields (record)
   "Return list of RECORD fields."
-  (-map (lambda (s) (concat (car s) " = "
-                            (if (cdr s)
-                                (let ((type (concat
-                                             "\t\t:: "
-                                             (s-join " | "
-                                                     (-flatten (cdr s))))))
-                                  (set-text-properties 0 (length type)
-                                                       '(face success) type)
-                                  type))))
-        (gethash record ivy-erlang-complete-records)))
+  (if (not ivy-erlang-complete-records)
+      (progn
+        (ivy-erlang-complete-reparse)
+        (message "Please wait for record parsing")
+        nil)
+    (-map (lambda (s) (concat (car s) " = "
+                              (if (cdr s)
+                                  (let ((type (concat
+                                               "\t\t:: "
+                                               (s-join " | "
+                                                       (-flatten (cdr s))))))
+                                    (set-text-properties 0 (length type)
+                                                         '(face success) type)
+                                    type))))
+          (gethash record ivy-erlang-complete-records))))
 
 (defun ivy-erlang-complete--extract-macros (file)
   "Extract erlang macros from FILE."
