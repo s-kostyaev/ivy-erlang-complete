@@ -311,7 +311,7 @@
                     (s-join " "
                             (list
                              "find" ivy-erlang-complete-project-root "-name" file
-                             "| xargs grep -e 'define('"))))))))
+                             "| xargs grep -h -e '^-define('"))))))))
 
 (defun ivy-erlang-complete--get-macros ()
   "Return list of acceptable erlang macros."
