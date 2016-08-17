@@ -148,7 +148,7 @@
    t))
 
 (defun ivy-erlang-complete--find-modules ()
-  "Find functions in MODULE."
+  "Find modules."
   (if (not ivy-erlang-complete-project-root)
       (ivy-erlang-complete-set-project-root))
   (-map (lambda (s) (concat s ":"))
@@ -193,6 +193,24 @@
                 (goto-char pos))
               (-map (lambda (elem) (car elem)) imenu--index-alist))))
   ivy-erlang-complete--local-functions)
+
+(defun ivy-erlang-complete--find-local-vars ()
+  "Find local variables at point."
+  (let* ((pos (point))
+         (function-begin (search-backward-regexp "^[a-z]"))
+         (search-string (buffer-substring-no-properties function-begin pos)))
+    (goto-char pos)
+    (-remove (lambda (s)
+               (-contains? ivy-erlang-complete-macros (concat "?" s)))
+             (with-temp-buffer
+               (insert search-string)
+               (goto-char (point-min))
+               (setq case-fold-search nil)
+               (setq-local local-vars '())
+               (while
+                   (search-forward-regexp "[A-Z][A-Za-z_0-9]*" nil t)
+                 (add-to-list 'local-vars (match-string 0)))
+               local-vars))))
 
 (defun ivy-erlang-complete-thing-at-point ()
   "Return the erlang thing at point, or nil if none is found."
@@ -395,6 +413,7 @@
                      (ivy-erlang-complete--get-record-fields
                       (buffer-substring-no-properties
                        (match-beginning 1) (match-end 1)))
+                     (ivy-erlang-complete--find-local-vars)
                      (ivy-erlang-complete--find-local-functions)
                      (ivy-erlang-complete--get-record-names)
                      (ivy-erlang-complete--find-modules)
@@ -402,6 +421,7 @@
                      ))
             (setq ivy-erlang-complete-candidates
                   (append
+                   (ivy-erlang-complete--find-local-vars)
                    (ivy-erlang-complete--find-local-functions)
                    (ivy-erlang-complete--get-record-names)
                    (ivy-erlang-complete--find-modules)

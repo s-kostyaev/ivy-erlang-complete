@@ -115,6 +115,7 @@ This is my emacs config for erlang developement:
 
 For now project is useful but can contain some bugs. There are context
 sensitive completions for:
+* local variables
 * local functions
 * module names
 * module functions
