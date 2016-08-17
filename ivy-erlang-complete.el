@@ -197,8 +197,9 @@
 (defun ivy-erlang-complete--find-local-vars ()
   "Find local variables at point."
   (let* ((pos (point))
+         (pos2 (progn (backward-word) (point)))
          (function-begin (search-backward-regexp "^[a-z]"))
-         (search-string (buffer-substring-no-properties function-begin pos)))
+         (search-string (buffer-substring-no-properties function-begin pos2)))
     (goto-char pos)
     (-remove (lambda (s)
                (-contains? ivy-erlang-complete-macros (concat "?" s)))
