@@ -52,7 +52,6 @@ This is my emacs config for erlang developement:
 
 ``` emacs-lisp
 ;;;; Erlang
-(need-package 'erlang)
 (setq flycheck-erlang-include-path '("../include" "../deps"))
 
 (defun fix-erlang-project-includes (project-root)
@@ -87,7 +86,7 @@ This is my emacs config for erlang developement:
                         (concat "find " project-root " -type d -name ebin")))
          ))
     (setq-local flycheck-erlang-library-path code-path)))
-(need-package 'ivy-erlang-complete)
+
 (require 'ivy-erlang-complete)
 (defvar erlang-mode-map)
 
