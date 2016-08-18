@@ -74,9 +74,12 @@
   (interactive)
   (setq-local ivy-erlang-complete-project-root
               (expand-file-name
-               (locate-dominating-file
-                default-directory
-                "deps")))
+               (or
+                (locate-dominating-file
+                 default-directory
+                 "rebar.config")
+                "./"))
+              )
   ivy-erlang-complete-project-root)
 
 ;;;###autoload
@@ -94,7 +97,6 @@
       (ivy-read "Counsel-erl cand:" candidates
                 :require-match t
                 :initial-input (if (not arity)
-                                   (concat module ":" function)
                                  (concat module ":" function "/"
                                          (format "%d" arity)))
                 :action (lambda (s)
@@ -447,23 +449,23 @@
                (func (car (cdr thing2))))
           (counsel-ag (concat "^" func"(")
                       ivy-erlang-complete-project-root
-                      (concat "-a -G " module ".erl") "find definition"))
+                      (concat "-a -G " module ".erl$") "find definition"))
       (if (s-prefix? "?" thing)
           (counsel-ag (concat "^-define(" (s-chop-prefix "?" thing) ",")
-                      ivy-erlang-complete-project-root "-a -G .hrl"
+                      ivy-erlang-complete-project-root "-a -G .hrl$"
                       "find definition")
         (let ((record (ivy-erlang-complete-record-at-point)))
           (if record (counsel-ag
                       (concat
                        "^-record("
                        (s-chop-prefix "#" (car (s-split "{" record)))",")
-                      ivy-erlang-complete-project-root "-a -G .hrl"
+                      ivy-erlang-complete-project-root "-a -G .hrl$"
                       "find definition")
             (if (thing-at-point-looking-at "-behaviour(\\([a-z_]+\\)).")
                 (counsel-ag (concat "^-module(" (match-string-no-properties 1)
                                     ").")
                             ivy-erlang-complete-project-root
-                            "-a -G erl$" "find definition")
+                            "-a -G .erl$" "find definition")
               (message "Can't find definition"))))))))
 
 ;;;###autoload
