@@ -40,6 +40,9 @@
 (defvar ivy-erlang-complete-project-root nil
   "Path to erlang project root.")
 
+(defvar-local ivy-erlang-complete--file-suffix "-a -G '\\.[eh]rl'"
+  "Regular expression for erlang files (*.erl *.hrl)")
+
 (defvar-local ivy-erlang-complete-candidates nil
   "Candidates for completion.")
 
@@ -68,6 +71,7 @@
   "Return path to executable with NAME."
   (concat ivy-erlang-complete--base "bin/" name))
 
+
 ;;;###autoload
 (defun ivy-erlang-complete-autosetup-project-root ()
   "Automatically setup erlang project root."
@@ -77,7 +81,7 @@
                (or
                 (locate-dominating-file
                  default-directory
-                 "rebar.config")
+                 "deps")
                 "./"))
               )
   ivy-erlang-complete-project-root)
@@ -437,36 +441,49 @@
   (ivy-read "erlang cand:" ivy-erlang-complete-candidates
             :initial-input ivy-erlang-complete-predicate
             :action #'ivy-erlang-complete--insert-candidate))
+;;;##restruct
+;;;###autoload
+(defun ivy-erlang-complete--find-definition (thing directory-path)
+  "Search function macro record in directory"
+  (cond
+   ((s-contains? ":" thing);module:function
+    (let* ((thing2 (s-split ":" thing))
+           (module (car thing2))
+           (func (car (cdr thing2))))
+      (counsel-ag (concat "^" func"(")
+                  directory-path
+                  (concat "-a -G /" module  erlang-file-name-extension-regexp) "find definition")))
+   ((s-prefix? "?" thing);find macro
+    (counsel-ag (concat "^-define(" (s-chop-prefix "?" thing) "[,(]")
+                directory-path  ivy-erlang-complete--file-suffix
+                "find definition"))
+   ((s-prefix? "#" thing);find record
+    (counsel-ag
+     (concat
+      "^-record("
+      (s-chop-prefix "#" thing)   ",")
+     directory-path  ivy-erlang-complete--file-suffix
+     "find definition"))
+   ((string-match-p "[a-z].*" thing);local function
+    (counsel-ag (concat "^" thing"(")
+                directory-path
+                (concat "-a -G /" (file-name-base) erlang-file-name-extension-regexp) "find definition"))
+   (t  (message "Can't find definition"))
+   ))
 
 ;;;###autoload
 (defun ivy-erlang-complete-find-definition ()
   "Find erlang definition."
   (interactive)
   (let ((thing (ivy-erlang-complete-thing-at-point)))
-    (if (s-contains? ":" thing)
-        (let* ((thing2 (s-split ":" thing))
-               (module (car thing2))
-               (func (car (cdr thing2))))
-          (counsel-ag (concat "^" func"(")
-                      ivy-erlang-complete-project-root
-                      (concat "-a -G " module ".erl$") "find definition"))
-      (if (s-prefix? "?" thing)
-          (counsel-ag (concat "^-define(" (s-chop-prefix "?" thing) ",")
-                      ivy-erlang-complete-project-root "-a -G .hrl$"
-                      "find definition")
-        (let ((record (ivy-erlang-complete-record-at-point)))
-          (if record (counsel-ag
-                      (concat
-                       "^-record("
-                       (s-chop-prefix "#" (car (s-split "{" record)))",")
-                      ivy-erlang-complete-project-root "-a -G .hrl$"
-                      "find definition")
-            (if (thing-at-point-looking-at "-behaviour(\\([a-z_]+\\)).")
-                (counsel-ag (concat "^-module(" (match-string-no-properties 1)
-                                    ").")
-                            ivy-erlang-complete-project-root
-                            "-a -G .erl$" "find definition")
-              (message "Can't find definition"))))))))
+    (ivy-erlang-complete--find-definition thing  ivy-erlang-complete-project-root)))
+
+(defun ivy-erlang-complete-find-library-definition ()
+  "Find erlang definition."
+  (interactive)
+  (let ((thing (ivy-erlang-complete-thing-at-point))
+        (project ))
+    (ivy-erlang-complete--find-definition thing ivy-erlang-complete-erlang-root)))
 
 ;;;###autoload
 (defun ivy-erlang-complete-find-references ()
@@ -476,28 +493,28 @@
     (if (s-contains? ":" thing)
         (counsel-ag (concat thing "(")
                     ivy-erlang-complete-project-root
-                    "-a -G rl$" "find references")
+                    ivy-erlang-complete--file-suffix "find references")
       (if (s-prefix? "?" thing)
           (counsel-ag (s-replace "?" "\\\?" thing)
                       ivy-erlang-complete-project-root
-                      "-a -G rl$" "find references")
+                      ivy-erlang-complete--file-suffix "find references")
         (if (thing-at-point-looking-at "-record(\\(['A-Za-z0-9_:.]+\\),")
             (counsel-ag (concat "#" (match-string-no-properties 1) "{")
                         ivy-erlang-complete-project-root
-                        "-a -G rl$" "find references")
+                        ivy-erlang-complete--file-suffix "find references")
           (if (thing-at-point-looking-at "-define(\\(['A-Za-z0-9_:.]+\\),")
               (counsel-ag (concat "\\\?" (match-string-no-properties 1))
                           ivy-erlang-complete-project-root
-                          "-a -G rl$" "find references")
+                          ivy-erlang-complete--file-suffix "find references")
             (let ((record (ivy-erlang-complete-record-at-point)))
               (if record
                   (counsel-ag (concat "#" (match-string-no-properties 1) "{")
                               ivy-erlang-complete-project-root
-                              "-a -G rl$" "find references")
+                              ivy-erlang-complete--file-suffix "find references")
                 (if (thing-at-point-looking-at "-behaviour(\\([a-z_]+\\)).")
                     (counsel-ag (concat "^" (match-string-no-properties 0))
                                 ivy-erlang-complete-project-root
-                                "-a -G erl$" "find references")
+                                "-a -G e\\.[eh]rl$" "find references")
                   (if (let* ((pos (point))
                              (is-function
                               (progn
@@ -513,10 +530,10 @@
                       (counsel-ag (concat (file-name-base (buffer-file-name))
                                           ":" thing "(")
                                   ivy-erlang-complete-project-root
-                                  "-a -G rl$" "find references")
+                                  ivy-erlang-complete--file-suffix "find references")
                     (counsel-ag thing
                                 ivy-erlang-complete-project-root
-                                "-a -G rl$" "find references")))))))))))
+                                ivy-erlang-complete--file-suffix "find references")))))))))))
 
 ;;; Testing
 (defun ivy-erlang-complete--test-regexp (name re match-data unmatch-data)
