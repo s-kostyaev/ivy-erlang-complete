@@ -593,9 +593,8 @@ If non-nil, EXTRA-ARGS string is appended to command."
 (defun ivy-erlang-complete-find-library-definition ()
   "Find erlang definition."
   (interactive)
-  (let ((thing (ivy-erlang-complete-thing-at-point))
-        (project ))
-    (ivy-erlang-complete--find-definition thing erlang-root-dir)))
+  (let ((thing (ivy-erlang-complete-thing-at-point)))
+    (ivy-erlang-complete--find-definition thing ivy-erlang-complete-erlang-root)))
 
 ;;;###autoload
 (defun ivy-erlang-complete-find-references ()
