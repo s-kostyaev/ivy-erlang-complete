@@ -26,16 +26,7 @@ For start using you need add to `init.el` something like this:
 
 ``` emacs-lisp
 (require 'ivy-erlang-complete)
-(add-hook 'erlang-mode-hook '(progn
-                               (define-key
-                                 erlang-mode-map (kbd "C-c C-r")
-                                 #'ivy-erlang-complete-find-references)
-                               (define-key
-                                 erlang-mode-map (kbd "C-c C-d")
-                                 #'ivy-erlang-complete-find-definition)
-                               (define-key
-                                 erlang-mode-map (kbd "C-:")
-                                 #'ivy-erlang-complete)))
+(add-hook 'erlang-mode-hook #'(ivy-erlang-complete-init))
 ;; automatic update completion data after save
 (add-hook 'after-save-hook '#ivy-erlang-complete-reparse)
 ```
@@ -95,17 +86,7 @@ This is my emacs config for erlang developement:
   (let ((project-root (ivy-erlang-complete-autosetup-project-root)))
       (fix-erlang-project-code-path project-root)
       (fix-erlang-project-includes project-root))
-  (ivy-erlang-complete-reparse)
-  (define-key erlang-mode-map (kbd "C-:")
-    'ivy-erlang-complete)
-  (define-key erlang-mode-map (kbd "C-c C-h")
-    'ivy-erlang-complete-show-doc-at-point)
-  (define-key erlang-mode-map (kbd "C-c C-e")
-    #'ivy-erlang-complete-set-project-root)
-  (define-key erlang-mode-map (kbd "C-c C-d")
-    #'ivy-erlang-complete-find-definition)
-  (define-key erlang-mode-map (kbd "C-c C-r")
-    #'ivy-erlang-complete-find-references))
+  (ivy-erlang-complete-init))
 (add-hook 'erlang-mode-hook #'my-erlang-hook)
 (add-hook 'after-save-hook #'ivy-erlang-complete-reparse)
 ```
