@@ -282,7 +282,10 @@
    (-flatten
     (-map 'ivy-erlang-complete--extract-records
           (append (ivy-erlang-complete--get-included-files)
-                  (list (buffer-file-name))))))
+                  (list
+                   (concat
+                    (file-name-base (buffer-file-name)) "."
+                    (file-name-extension (buffer-file-name))))))))
   ivy-erlang-complete-records)
 
 (defun ivy-erlang-complete--async-parse-records ()
@@ -301,9 +304,9 @@
             (prin1-to-string (ivy-erlang-complete--parse-records))
             )
          `(lambda (res)
-            (switch-to-buffer ,(buffer-name))
-            (setq ivy-erlang-complete-records (read res))
-            (setq ivy-erlang-complete--parsing-in-progress nil)
+            (with-current-buffer ,(buffer-name)
+              (setq ivy-erlang-complete-records (read res))
+              (setq ivy-erlang-complete--parsing-in-progress nil))
             (message "Erlang completions updated"))))))
 
 (defun ivy-erlang-complete--get-record-names ()
