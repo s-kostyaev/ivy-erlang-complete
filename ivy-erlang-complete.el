@@ -82,10 +82,26 @@
                 (locate-dominating-file
                  default-directory
                  "deps")
-                "./"))
-              )
+                "./")))
   ivy-erlang-complete-project-root)
 
+;;;###autoload
+(defun ivy-erlang-complete-init ()
+  "Config ivy-erlang-complete by default."
+  (interactive)
+  (ivy-erlang-complete-reparse)
+  (define-key erlang-mode-map (kbd "C-:")
+    'ivy-erlang-complete)
+  (define-key erlang-mode-map (kbd "C-c C-h")
+    'ivy-erlang-complete-show-doc-at-point)
+  (define-key erlang-mode-map (kbd "C-c SPC")
+    'ivy-erlang-complete-find-library-definition)
+  (define-key erlang-mode-map (kbd "C-c C-e")
+    #'ivy-erlang-complete-set-project-root)
+  (define-key erlang-mode-map (kbd "C-c C-d")
+    #'ivy-erlang-complete-find-definition)
+  (define-key erlang-mode-map (kbd "C-c C-r")
+    #'ivy-erlang-complete-find-references))
 ;;;###autoload
 (defun ivy-erlang-complete-show-doc-at-point ()
   "Show doc for function from standart library."
@@ -457,19 +473,22 @@
     (counsel-ag (concat "^-define(" (s-chop-prefix "?" thing) "[,(]")
                 directory-path  ivy-erlang-complete--file-suffix
                 "find definition"))
-   ((s-prefix? "#" thing);find record
+   ((setq record (ivy-erlang-complete-record-at-point));find record
     (counsel-ag
      (concat
       "^-record("
-      (s-chop-prefix "#" thing)   ",")
+      (s-chop-prefix "#" (car (s-split "{" record)))",")
      directory-path  ivy-erlang-complete--file-suffix
      "find definition"))
-   ((string-match-p "[a-z].*" thing);local function
+   ((thing-at-point-looking-at "-behaviour(\\([a-z_]+\\)).")
+    (counsel-ag (concat "^-module(" (match-string-no-properties 1)  ").")
+                directory-path
+                "-a -G .erl$" "find definition"))
+   ((string-match-p "^[a-z]" thing);local function
     (counsel-ag (concat "^" thing"(")
                 directory-path
                 (concat "-a -G /" (file-name-base) erlang-file-name-extension-regexp) "find definition"))
-   (t  (message "Can't find definition"))
-   ))
+   (t  (message "Can't find definition"))))
 
 ;;;###autoload
 (defun ivy-erlang-complete-find-definition ()
@@ -483,7 +502,7 @@
   (interactive)
   (let ((thing (ivy-erlang-complete-thing-at-point))
         (project ))
-    (ivy-erlang-complete--find-definition thing ivy-erlang-complete-erlang-root)))
+    (ivy-erlang-complete--find-definition thing erlang-root-dir)))
 
 ;;;###autoload
 (defun ivy-erlang-complete-find-references ()
@@ -610,7 +629,6 @@
     add/2,
     hello/0,
     greet_and_add_two/1
-  
 )."
     "-export(
   [
