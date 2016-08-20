@@ -26,7 +26,7 @@ For start using you need add to `init.el` something like this:
 
 ``` emacs-lisp
 (require 'ivy-erlang-complete)
-(add-hook 'erlang-mode-hook #'(ivy-erlang-complete-init))
+(add-hook 'erlang-mode-hook #'ivy-erlang-complete-init)
 ;; automatic update completion data after save
 (add-hook 'after-save-hook '#ivy-erlang-complete-reparse)
 ```
