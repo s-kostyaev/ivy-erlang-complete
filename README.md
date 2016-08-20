@@ -79,8 +79,6 @@ This is my emacs config for erlang developement:
     (setq-local flycheck-erlang-library-path code-path)))
 
 (require 'ivy-erlang-complete)
-(defvar erlang-mode-map)
-
 (defun my-erlang-hook ()
   "Setup for erlang."
   (let ((project-root (ivy-erlang-complete-autosetup-project-root)))
