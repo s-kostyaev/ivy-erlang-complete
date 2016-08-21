@@ -34,7 +34,7 @@
 
 (defconst ivy-erlang-complete--base (file-name-directory load-file-name))
 
-(defvar ivy-erlang-complete-erlang-root "/usr/lib/erlang"
+(defvar ivy-erlang-complete-erlang-root "/usr/lib/erlang/"
   "Path to erlang root.")
 
 (defvar ivy-erlang-complete-project-root nil
@@ -471,7 +471,7 @@
 ;;;##restruct
 ;;;###autoload
 (defun ivy-erlang-complete--find-definition (thing directory-path)
-  "Search function macro record in directory"
+  "Search THING definition in DIRECTORY-PATH."
   (cond
    ((s-contains? ":" thing);module:function
     (let* ((thing2 (s-split ":" thing))
@@ -479,7 +479,7 @@
            (func (car (cdr thing2))))
       (counsel-ag (concat "^" func"(")
                   directory-path
-                  (concat "-a -G /" module  erlang-file-name-extension-regexp)
+                  (concat "-a -G " module ".erl")
                   "find definition")))
    ((s-prefix? "?" thing);find macro
     (counsel-ag (concat "^-define(" (s-chop-prefix "?" thing) "[,(]")
@@ -594,7 +594,8 @@ If non-nil, EXTRA-ARGS string is appended to command."
   "Find erlang definition."
   (interactive)
   (let ((thing (ivy-erlang-complete-thing-at-point)))
-    (ivy-erlang-complete--find-definition thing ivy-erlang-complete-erlang-root)))
+    (flet ((find-file (x) (view-file x)))
+     (ivy-erlang-complete--find-definition thing ivy-erlang-complete-erlang-root))))
 
 ;;;###autoload
 (defun ivy-erlang-complete-find-references ()
