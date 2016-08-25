@@ -31,6 +31,7 @@
 (require 's)
 (require 'erlang)
 (require 'imenu)
+(require 'counsel)
 
 (defconst ivy-erlang-complete--base (file-name-directory load-file-name))
 
