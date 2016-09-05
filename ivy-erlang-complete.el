@@ -72,6 +72,9 @@
   (make-hash-table :test 'equal)
   "Memoizaton for behaviours.")
 
+(defvar ivy-erlang-complete--global-project-root nil
+  "Global variable for use with async commands.")
+
 (defun ivy-erlang-complete--executable (name)
   "Return path to executable with NAME."
   (concat ivy-erlang-complete--base "bin/" name))
@@ -525,7 +528,7 @@ If non-nil, EXTRA-ARGS string is appended to command."
                   (setq ivy--old-re
                         (ivy--regex string))))))
       (let ((cmd (format "find %s %s %s | xargs grep -H -n -e '^-callback %s(' -e '^-spec %s('"
-                         ivy-erlang-complete-erlang-root ivy-erlang-complete-project-root
+                         ivy-erlang-complete-erlang-root ivy-erlang-complete--global-project-root
                          (ivy-erlang-complete--prepare-find-args extra-args)
                          qregex qregex)))
         (counsel--async-command cmd))
@@ -550,6 +553,7 @@ If non-nil, EXTRA-ARGS string is appended to command."
 
 (defun ivy-erlang-complete--find-spec (thing)
   "Search spec for THING."
+  (setq ivy-erlang-complete--global-project-root ivy-erlang-complete-project-root)
   (if (s-contains? ":" thing)
       (let* ((splitted-thing (s-split ":" thing))
              (module (car splitted-thing))
