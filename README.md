@@ -18,7 +18,7 @@ You can now install package `ivy-erlang-complete` from
  * coreutils
  * sed
  * grep
- * the_silver_searcher (for finding definition & references)
+ * the_silver_searcher (for finding definition, references and specs)
  
 ## Basic setup
 
@@ -38,6 +38,7 @@ features:
 
 * `rebar` for building & testing
 * `flycheck` for on the fly error checking
+* `wrangler` for smart refactoring
 
 This is my emacs config for erlang developement:
 
@@ -87,6 +88,16 @@ This is my emacs config for erlang developement:
   (ivy-erlang-complete-init))
 (add-hook 'erlang-mode-hook #'my-erlang-hook)
 (add-hook 'after-save-hook #'ivy-erlang-complete-reparse)
+
+;;; wrangler
+;; install https://github.com/RefactoringTools/wrangler/blob/master/INSTALL
+;; before usage
+(add-to-list 'load-path "/usr/lib/erlang/lib/wrangler-1.2.0/elisp")
+(require 'wrangler)
+; Some code inspection functionalities of Wrangler generate .dot
+; files, which can be compiled and previewed in Emacs if the
+; Graphviz-dot mode for Emacs is enabled.
+(load-library "graphviz-dot-mode")
 ```
 
 ## Current state
@@ -101,8 +112,20 @@ sensitive completions for:
 * record fields
 * macros names
 
-And also can find definition and references or show documentation for
-functions from standart library in your browser.
+Also you can find:
+* definition of:
+  * functions
+  * macros
+  * records
+* references of:
+  * functions
+  * records
+  * macros
+* specs for:
+  * functions
+  * callbacks from used behaviours
+
+And see documentation for functions from standart library in your browser.
 
 ![gif](https://github.com/s-kostyaev/ivy-erlang-complete/raw/master/try.gif)
 
