@@ -65,8 +65,11 @@
 (defvar ivy-erlang-complete--comment-regexp
   "%.*$")
 
-(defvar-local ivy-erlang-complete--parsing-in-progress nil
-  "Sync variable for async parsing.")
+(defvar-local ivy-erlang-complete--record-parsing-in-progress nil
+  "Sync variable for async records parsing.")
+
+(defvar-local ivy-erlang-complete--macros-parsing-in-progress nil
+  "Sync variable for async macros parsing.")
 
 (defvar ivy-erlang-complete--behaviours
   (make-hash-table :test 'equal)
@@ -283,8 +286,7 @@
       (progn
         (setq ivy-erlang-complete--local-functions nil)
         (ivy-erlang-complete--find-local-functions)
-        (setq ivy-erlang-complete-macros nil)
-        (ivy-erlang-complete--get-macros)
+        (ivy-erlang-complete--async-parse-macros)
         (setq ivy-erlang-complete--behaviours
               (make-hash-table :test 'equal))
         (ivy-erlang-complete--async-parse-records))))
@@ -305,9 +307,9 @@
 
 (defun ivy-erlang-complete--async-parse-records ()
   "Async parse erlang records for current buffer."
-  (if (not ivy-erlang-complete--parsing-in-progress)
+  (if (not ivy-erlang-complete--record-parsing-in-progress)
       (progn
-        (setq ivy-erlang-complete--parsing-in-progress t)
+        (setq ivy-erlang-complete--record-parsing-in-progress t)
         (async-start
          `(lambda ()
             ,(async-inject-variables "load-path")
@@ -321,7 +323,7 @@
          `(lambda (res)
             (with-current-buffer ,(buffer-name)
               (setq ivy-erlang-complete-records (read res))
-              (setq ivy-erlang-complete--parsing-in-progress nil))
+              (setq ivy-erlang-complete--record-parsing-in-progress nil))
             (message "Erlang completions updated"))))))
 
 (defun ivy-erlang-complete--get-record-names ()
@@ -388,6 +390,28 @@
                                "."
                                (file-name-extension (buffer-file-name)))))))))))
   ivy-erlang-complete-macros)
+
+(defun ivy-erlang-complete--async-parse-macros ()
+  "Async parse erlang macros for current buffer."
+  (if (not ivy-erlang-complete--macros-parsing-in-progress)
+      (progn
+        (setq ivy-erlang-complete--macros-parsing-in-progress t)
+        (async-start
+         `(lambda ()
+            ,(async-inject-variables "load-path")
+            (require 'ivy-erlang-complete)
+            (find-file ,(buffer-file-name))
+            (setq ivy-erlang-complete-project-root ,ivy-erlang-complete-project-root)
+            (setq eval-expression-print-length nil)
+            (setq print-length nil)
+            (prin1-to-string (ivy-erlang-complete--get-macros))
+            )
+         `(lambda (res)
+            (with-current-buffer ,(buffer-name)
+              (setq ivy-erlang-complete-macros (read res))
+              (setq ivy-erlang-complete--macros-parsing-in-progress nil))
+            (message "Erlang completions updated"))))))
+
 
 ;;;###autoload
 (defun ivy-erlang-complete-set-project-root ()
