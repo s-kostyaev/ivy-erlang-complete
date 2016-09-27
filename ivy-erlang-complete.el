@@ -246,7 +246,6 @@
                (insert search-string)
                (goto-char (point-min))
                (setq case-fold-search nil)
-               (defvar-local local-vars)
                (setq-local local-vars '())
                (while
                    (search-forward-regexp "[A-Z][A-Za-z_0-9]*" nil t)
