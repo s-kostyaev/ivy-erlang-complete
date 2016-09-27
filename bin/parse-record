@@ -45,7 +45,7 @@ main([String]) ->
         {ok, Tokens, _} = erl_scan:string(String),
         {ok,{attribute,_,record,
              {RecordName, FieldList}}} = erl_parse:parse(Tokens),
-        io:format("(\"~ts\" ~ts)", [RecordName, unicode:characters_to_list(parse_fields(FieldList))])
+        io:format("(\"~tp\" ~ts)", [RecordName, unicode:characters_to_list(parse_fields(FieldList))])
     catch
         _:E ->
             io:format("~tp~n",[E]),
