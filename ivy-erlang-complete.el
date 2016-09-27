@@ -594,6 +594,7 @@ If non-nil, EXTRA-ARGS string is appended to command."
 
 (defun ivy-erlang-complete--find-def (filename regex)
   "Find definition in FILENAME by REGEX."
+  (setq ivy-erlang-complete--global-project-root ivy-erlang-complete-project-root)
   (ivy-read "find definition  "
                   (lambda (string)
                     (ivy-erlang-complete--find-grep-def-function string filename))
