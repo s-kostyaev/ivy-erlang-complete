@@ -33,6 +33,7 @@
 (require 'imenu)
 (require 'counsel)
 (require 'simple)
+(if (> emacs-major-version 24) (require 'xref))
 
 (defconst ivy-erlang-complete--base (file-name-directory load-file-name))
 
@@ -114,8 +115,12 @@
     #'ivy-erlang-complete-find-references)
   (define-key erlang-mode-map (kbd "C-c C-f")
     #'ivy-erlang-complete-find-spec)
-  (define-key erlang-mode-map (kbd "M-,")
-    #'pop-global-mark))
+  (if (> emacs-major-version 24)
+      (define-key erlang-mode-map (kbd "M-,")
+        #'xref-pop-marker-stack)
+    (define-key erlang-mode-map (kbd "M-,")
+      #'pop-global-mark))
+  )
 ;;;###autoload
 (defun ivy-erlang-complete-show-doc-at-point ()
   "Show doc for function from standart library."
@@ -656,7 +661,9 @@ If non-nil, EXTRA-ARGS string is appended to command."
 (defun ivy-erlang-complete-find-spec ()
   "Find spec at point.  It also find callback definition."
   (interactive)
-  (push-mark)
+  (if (> emacs-major-version 24)
+      (xref-push-marker-stack)
+    (push-mark))
   (ivy-erlang-complete--find-spec
    (ivy-erlang-complete-thing-at-point)))
 
@@ -664,7 +671,9 @@ If non-nil, EXTRA-ARGS string is appended to command."
 (defun ivy-erlang-complete-find-definition ()
   "Find erlang definition."
   (interactive)
-  (push-mark)
+  (if (> emacs-major-version 24)
+      (xref-push-marker-stack)
+    (push-mark))
   (let ((thing (ivy-erlang-complete-thing-at-point)))
     (ivy-erlang-complete--find-definition thing)))
 
@@ -672,7 +681,9 @@ If non-nil, EXTRA-ARGS string is appended to command."
 (defun ivy-erlang-complete-find-references ()
   "Find erlang references."
   (interactive)
-  (push-mark)
+  (if (> emacs-major-version 24)
+      (xref-push-marker-stack)
+    (push-mark))
   (let ((thing (ivy-erlang-complete-thing-at-point)))
     (if (s-contains? ":" thing)
         (counsel-ag (concat thing "(")
