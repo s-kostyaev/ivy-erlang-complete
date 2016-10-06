@@ -264,7 +264,8 @@
 
 (defun ivy-erlang-complete-record-at-point ()
   "Return the erlang record at point, or nil if none is found."
-  (when (thing-at-point-looking-at "#\\('?[a-zA-z0-9_.]+'?\\){[^{^}^#]*}?" 500)
+  (when (thing-at-point-looking-at
+         (format "#\\(%s\\)\\([\s-]*{[^{^}^#]*}?\\)*[.]*" erlang-atom-regexp) 500)
     (match-string-no-properties 0)))
 
 (defun ivy-erlang-complete-export-at-point ()
@@ -339,7 +340,7 @@
         nil)
     (setq ivy-erlang-complete--record-names nil)
     (maphash (lambda (key _)
-               (push (concat "#" key "{}") ivy-erlang-complete--record-names))
+               (push (concat "#" key) ivy-erlang-complete--record-names))
              ivy-erlang-complete-records)
     ivy-erlang-complete--record-names))
 
@@ -350,7 +351,7 @@
         (ivy-erlang-complete-reparse)
         (message "Please wait for record parsing")
         nil)
-    (-map (lambda (s) (concat (car s) " = "
+    (-map (lambda (s) (concat (car s)
                               (if (cdr s)
                                   (let ((type (concat
                                                "\t\t:: "
@@ -520,7 +521,7 @@
                                     (list
                                      (file-name-nondirectory
                                       (buffer-file-name))))
-     (concat "^-define(" (s-chop-prefix "?" thing) ",")))
+     (concat "^-define(" (s-chop-prefix "?" thing))))
    ((setq record (ivy-erlang-complete-record-at-point));find record
     (ivy-erlang-complete--find-def (append
                                     (ivy-erlang-complete--get-included-files)
@@ -529,7 +530,7 @@
                                       (buffer-file-name))))
      (concat
       "^-record("
-      (s-chop-prefix "#" (car (s-split "{" record)))",")))
+      (match-string-no-properties 1) ",")))
    ((thing-at-point-looking-at "-behaviour(\\([a-z_]+\\)).")
     (ivy-erlang-complete--find-def
      ".erl$"
@@ -585,7 +586,7 @@ If non-nil, EXTRA-ARGS string is appended to command."
                   (counsel-unquote-regex-parens
                   (setq ivy--old-re
                         (ivy--regex string))))))
-      (let ((cmd (format "find %s %s %s | xargs grep -H -n -e '%s'"
+      (let ((cmd (format "find %s %s %s | xargs grep -H -n -e \"\"\"%s\"\"\""
                          ivy-erlang-complete-erlang-root ivy-erlang-complete--global-project-root
                          (ivy-erlang-complete--prepare-def-find-args extra-args)
                          string)))
@@ -694,7 +695,7 @@ If non-nil, EXTRA-ARGS string is appended to command."
                       ivy-erlang-complete-project-root
                       ivy-erlang-complete--file-suffix "find references")
         (if (thing-at-point-looking-at "-record(\\(['A-Za-z0-9_:.]+\\),")
-            (counsel-ag (concat "#" (match-string-no-properties 1) "{")
+            (counsel-ag (concat "#" (match-string-no-properties 1))
                         ivy-erlang-complete-project-root
                         ivy-erlang-complete--file-suffix "find references")
           (if (thing-at-point-looking-at "-define(\\(['A-Za-z0-9_:.]+\\),")
@@ -703,7 +704,7 @@ If non-nil, EXTRA-ARGS string is appended to command."
                           ivy-erlang-complete--file-suffix "find references")
             (let ((record (ivy-erlang-complete-record-at-point)))
               (if record
-                  (counsel-ag (concat "#" (match-string-no-properties 1) "{")
+                  (counsel-ag (concat "#" (match-string-no-properties 1))
                               ivy-erlang-complete-project-root
                               ivy-erlang-complete--file-suffix "find references")
                 (if (thing-at-point-looking-at "-behaviour(\\([a-z_]+\\)).")
