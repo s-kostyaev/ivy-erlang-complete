@@ -127,7 +127,9 @@ Also you can find:
 
 And see documentation for functions from standart library in your browser.
 
-![gif](https://github.com/s-kostyaev/ivy-erlang-complete/raw/master/try.gif)
+![completions](https://github.com/s-kostyaev/ivy-erlang-complete/raw/master/completion.gif)
+![go to definition references](https://github.com/s-kostyaev/ivy-erlang-complete/raw/master/gotodefref.gif)
+![find spec](https://github.com/s-kostyaev/ivy-erlang-complete/raw/master/findspec.gif)
 
 ## Why not `distel`?
 
