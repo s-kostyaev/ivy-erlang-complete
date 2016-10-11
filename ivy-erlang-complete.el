@@ -474,6 +474,7 @@
       (progn
         (if (ivy-erlang-complete-export-at-point)
             (progn
+              (setq ivy-erlang-complete--local-functions nil)
               (setq ivy-erlang-complete-candidates
                     (ivy-erlang-complete--find-local-functions)))
           (if
