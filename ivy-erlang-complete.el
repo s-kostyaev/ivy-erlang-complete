@@ -95,18 +95,21 @@
 
 (defun ivy-erlang-complete--find-root-by-deps (&optional start-dir)
   "Find project root as directory with rebar dependencies start from START-DIR."
-  (let ((dir (locate-dominating-file (or start-dir default-directory)
+  (let ((dir (locate-dominating-file (or (expand-file-name ".." start-dir)
+                                         default-directory)
                                      "rebar.config")))
     (if dir
-        (or (if (directory-files
-                 (expand-file-name
-                  (shell-command-to-string
-                   (format "cd %s && %s" dir (ivy-erlang-complete--executable
-                                              "find-deps-dir"))) dir))
-                (expand-file-name dir)
-              nil)
-            (ivy-erlang-complete--find-root-by-deps dir))
-      (or start-dir default-directory))))
+        (let ((test-dir (expand-file-name
+                         (shell-command-to-string
+                          (format "cd %s && %s" dir
+                                  (ivy-erlang-complete--executable
+                                   "find-deps-dir"))) dir)))
+          (or (if (and (file-exists-p test-dir)
+                       (directory-files test-dir))
+                  (expand-file-name dir)
+                nil)
+              (ivy-erlang-complete--find-root-by-deps dir)))
+      (expand-file-name (or start-dir default-directory)))))
 
 ;;;###autoload
 (defun ivy-erlang-complete-init ()
