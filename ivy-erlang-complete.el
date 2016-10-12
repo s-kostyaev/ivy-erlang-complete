@@ -291,6 +291,29 @@
         (kill-buffer)
         result))))
 
+(defun ivy-erlang-complete--is-type-at-point ()
+  "Return t if type at point."
+  (save-excursion
+    (let ((starting-point (point))
+	  (case-fold-search nil)
+	  (state nil))
+      (erlang-beginning-of-clause)
+      (while (< (point) starting-point)
+	(setq state (erlang-partial-parse (point) starting-point state)))
+      (string-equal "::" (caaar state)))))
+
+(defun ivy-erlang-complete--is-guard-at-point ()
+  "Return t if guard at point."
+  (save-excursion
+    (let ((starting-point (point))
+	  (case-fold-search nil)
+	  (state nil))
+      (erlang-beginning-of-clause)
+      (while (< (point) starting-point)
+	(setq state (erlang-partial-parse (point) starting-point state)))
+      (string-equal "when" (caaar state)))))
+
+
 (defun ivy-erlang-complete--get-included-files ()
   "Get included files for current buffer."
   (-map (lambda (m) (concat (file-name-base (s-trim (car (-drop 1 m)))) ".hrl"))
@@ -465,7 +488,8 @@
                        (make-string (if (= 0 arity) arity (- arity 1)) ?,)
                        ")"))
               (goto-char (- (point) arity)))
-          (if (string-match ".*{}$" candidate)
+          (if (and (string-match ".*()$" candidate)
+                   (ivy-erlang-complete--is-guard-at-point))
               (progn
                 (ivy-completion-in-region-action candidate)
                 (goto-char (- (point) 1)))
@@ -499,7 +523,12 @@
                                (-contains?
                                 (ivy-erlang-complete--get-export) el))
                              (ivy-erlang-complete--find-local-functions))))
-          (if
+          (if (ivy-erlang-complete--is-guard-at-point)
+              (setq ivy-erlang-complete-candidates
+                    (append (-map (lambda (g) (format "%s()" g))
+                                  erlang-guards)
+                            erlang-operators))
+           (if
               (ivy-erlang-complete-record-at-point)
               (setq ivy-erlang-complete-candidates
                     (append
@@ -519,7 +548,7 @@
                    (ivy-erlang-complete--get-record-names)
                    (ivy-erlang-complete--find-modules)
                    (ivy-erlang-complete--get-macros)
-                   ))))
+                   )))))
         (setq ivy-erlang-complete-predicate (s-chop-prefix "?" thing)))))
   (when (looking-back ivy-erlang-complete-predicate (line-beginning-position))
     (setq ivy-completion-beg (match-beginning 0))

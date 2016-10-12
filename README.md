@@ -111,6 +111,7 @@ sensitive completions for:
 * record names
 * record fields
 * macros names
+* guards
 
 Also you can find:
 * definition of:
