@@ -272,7 +272,7 @@
 
 (defun ivy-erlang-complete-thing-at-point ()
   "Return the erlang thing at point, or nil if none is found."
-  (when (thing-at-point-looking-at "\??#?['A-Za-z0-9_:]+")
+  (when (thing-at-point-looking-at "\??#?['A-Za-z0-9_:]*")
     (match-string-no-properties 0)))
 
 (defun ivy-erlang-complete-record-at-point ()
