@@ -471,6 +471,12 @@
                 (goto-char (- (point) 1)))
             (ivy-completion-in-region-action candidate)))))))
 
+(defun ivy-erlang-complete--get-export ()
+  "Return formated exported functions with arity."
+  (-map (lambda (x)
+          (format "%s/%d" (car x) (cdr x)))
+        (erlang-get-export)))
+
 ;;;###autoload
 (defun ivy-erlang-complete ()
   "Erlang completion at point."
@@ -489,7 +495,10 @@
             (progn
               (setq ivy-erlang-complete--local-functions nil)
               (setq ivy-erlang-complete-candidates
-                    (ivy-erlang-complete--find-local-functions)))
+                    (-remove (lambda (el)
+                               (-contains?
+                                (ivy-erlang-complete--get-export) el))
+                             (ivy-erlang-complete--find-local-functions))))
           (if
               (ivy-erlang-complete-record-at-point)
               (setq ivy-erlang-complete-candidates
