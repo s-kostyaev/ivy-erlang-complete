@@ -64,6 +64,12 @@
 (defvar-local ivy-erlang-complete--local-functions nil
   "Local functions in current buffer.")
 
+(defvar-local ivy-erlang-complete--record nil
+  "Current erlang record.")
+
+(defvar-local ivy-erlang-complete--local-vars nil
+  "Local variables for current cursor position.")
+
 (defvar ivy-erlang-complete--comment-regexp
   "%.*$")
 
@@ -264,11 +270,11 @@
                (insert search-string)
                (goto-char (point-min))
                (setq case-fold-search nil)
-               (setq-local local-vars '())
+               (setq-local ivy-erlang-complete--local-vars '())
                (while
                    (search-forward-regexp "[A-Z][A-Za-z_0-9]*" nil t)
-                 (add-to-list 'local-vars (match-string 0)))
-               local-vars))))
+                 (add-to-list 'ivy-erlang-complete--local-vars (match-string 0)))
+               ivy-erlang-complete--local-vars))))
 
 (defun ivy-erlang-complete-thing-at-point ()
   "Return the erlang thing at point, or nil if none is found."
@@ -574,7 +580,7 @@
                                      (file-name-nondirectory
                                       (buffer-file-name))))
      (concat "^-define(" (s-chop-prefix "?" thing))))
-   ((setq record (ivy-erlang-complete-record-at-point));find record
+   ((setq ivy-erlang-complete--record (ivy-erlang-complete-record-at-point))
     (ivy-erlang-complete--find-def (append
                                     (ivy-erlang-complete--get-included-files)
                                     (list
@@ -754,8 +760,9 @@ If non-nil, EXTRA-ARGS string is appended to command."
               (counsel-ag (concat "\\\?" (match-string-no-properties 1))
                           ivy-erlang-complete-project-root
                           ivy-erlang-complete--file-suffix "find references")
-            (let ((record (ivy-erlang-complete-record-at-point)))
-              (if record
+            (let ((ivy-erlang-complete--record
+                   (ivy-erlang-complete-record-at-point)))
+              (if ivy-erlang-complete--record
                   (counsel-ag (concat "#" (match-string-no-properties 1))
                               ivy-erlang-complete-project-root
                               ivy-erlang-complete--file-suffix "find references")
