@@ -600,6 +600,14 @@
     (ivy-erlang-complete--find-def
      ".erl$"
      (concat "^-module(" (match-string-no-properties 1) ").")))
+   ((ivy-erlang-complete--is-type-at-point)
+    (if (member thing erlang-predefined-types)
+        (message "predefined type")
+      (ivy-erlang-complete--find-def
+       (append
+        (ivy-erlang-complete--get-included-files)
+        (list (file-name-nondirectory (buffer-file-name))))
+       (concat "^-type " thing "()"))))
    ((string-match-p "^[a-z]" thing)
     (ivy-erlang-complete--find-def
      (file-name-nondirectory (buffer-file-name))
@@ -649,11 +657,10 @@ If non-nil, EXTRA-ARGS string is appended to command."
  'ivy-erlang-complete--find-grep-spec-function 123 "No matches found")
 (ivy-set-occur 'ivy-erlang-complete--find-grep-spec-function 'counsel-ag-occur)
 
-(defun ivy-erlang-complete--find-grep-def-function (string extra-args)
-  "Grep in the project directory for STRING.
-If non-nil, EXTRA-ARGS string is appended to command."
-  (when (null extra-args)
-    (setq-local extra-args "*"))
+(defun ivy-erlang-complete--find-grep-def-function (string files)
+  "Grep in the project directory for STRING in FILES."
+  (when (null files)
+    (setq-local files "*"))
   (if (< (length string) 3)
       (counsel-more-chars 3)
     (let ((qregex (shell-quote-argument
@@ -661,11 +668,12 @@ If non-nil, EXTRA-ARGS string is appended to command."
                     (setq ivy--old-re
                           (ivy--regex string))))))
       (let ((cmd
-             (format "find %s %s %s | xargs grep -H -n -e \"\"\"%s\"\"\""
-                     ivy-erlang-complete-erlang-root
-                     ivy-erlang-complete--global-project-root
-                     (ivy-erlang-complete--prepare-def-find-args extra-args)
-                     string)))
+             (format
+              "find %s %s %s | xargs grep -H -n -e \"\"\"%s\"\"\" -e \"\"\"-type %s\"\"\""
+              ivy-erlang-complete-erlang-root
+              ivy-erlang-complete--global-project-root
+              (ivy-erlang-complete--prepare-def-find-args files)
+              string (string-remove-prefix "^" string))))
         (message "%s" cmd)
         (counsel--async-command cmd))
       nil)))
