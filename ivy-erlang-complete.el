@@ -170,11 +170,6 @@
                                   (nth 1 result)
                                   (nth 2 result)))))))))))
 
-;; For test eval this
-;; (progn
-;;  (load-file "/home/feofan/.emacs.d/ivy-erlang-complete/ivy-erlang-complete.el")
-;;  (ivy-erlang-complete--test-export-regexp))
-
 (defvar ivy-erlang-complete--export-regexp
   "-export([[:space:]\n]*\\[[\n[:space:]]*[a-z/0-9\n[:space:]\,_]*][\n[:space:]]*).")
 
@@ -410,40 +405,37 @@
         (ivy-erlang-complete-reparse)
         (message "Please wait for record parsing")
         nil)
-    (cl-mapcar (lambda (s)
-                 (concat (car s)
-                         (if (cdr s)
-                             (let ((type
-                                    (concat
-                                     "\t\t:: "
-                                     (string-join
-                                      (ivy-erlang-complete--flatten
-                                       (cdr s))  " | "))))
-                               (set-text-properties 0 (length type)
-                                                    '(face success) type)
-                               type))))
-               (gethash record ivy-erlang-complete-records))))
+    (cl-mapcar
+     (lambda (s)
+       (concat
+        (car s)
+        (if (cdr s)
+            (let ((type
+                   (concat "\t\t:: " (string-join (ivy-erlang-complete--flatten
+                                                   (cdr s))  " | "))))
+              (set-text-properties 0 (length type) '(face success) type)
+              type))))
+     (gethash record ivy-erlang-complete-records))))
 
 (defun ivy-erlang-complete--extract-macros (file)
   "Extract erlang macros from FILE."
   (cl-delete-duplicates
-   (cl-mapcar (lambda (s)
-                (concat "?"
-                        (car
-                         (split-string
-                          (car
-                           (split-string
-                            (string-remove-prefix "-define(" s)
-                            ","))
-                          "("))))
-              (split-string
-               (string-trim
-                (shell-command-to-string
-                 (string-join
-                  (list
-                   "find" ivy-erlang-complete-project-root "-name" file
-                   "| xargs grep -h -e '^-define('") " ")))
-               "\n"))))
+   (cl-mapcar
+    (lambda (s)
+      (concat
+       "?"
+       (car
+        (split-string
+         (car (split-string (string-remove-prefix "-define(" s) ","))
+         "("))))
+    (split-string
+     (string-trim
+      (shell-command-to-string
+       (string-join
+        (list
+         "find" ivy-erlang-complete-project-root "-name" file
+         "| xargs grep -h -e '^-define('") " ")))
+     "\n"))))
 
 (defun ivy-erlang-complete--get-macros ()
   "Return list of acceptable erlang macros."
