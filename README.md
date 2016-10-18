@@ -102,8 +102,14 @@ This is my emacs config for erlang developement:
 
 ## Current state
 
-For now project is useful but can contain some bugs. There are context
-sensitive completions for:
+For now project is useful for production erlang development. There are
+some minor issues with context identifying. In this cases accuracy
+sacrificed for speed. Also comleting for functions in modules with
+export_all directive doesn't work. I can implement it. But I don't
+do it. This implementation well be very slow. Also I think that
+export_all is bad practice.
+
+There are context sensitive completions for:
 * local variables
 * local functions
 * module names
@@ -112,43 +118,55 @@ sensitive completions for:
 * record fields
 * macros names
 * guards
+* types
+
+![completions](https://github.com/s-kostyaev/ivy-erlang-complete/raw/master/completion.gif)
 
 Also you can find:
 * definition of:
   * functions
   * macros
   * records
+  * types
 * references of:
   * functions
   * records
   * macros
+  * types
+
+![go to definition references](https://github.com/s-kostyaev/ivy-erlang-complete/raw/master/gotodefref.gif)
+
 * specs for:
   * functions
   * callbacks from used behaviours
 
-And see documentation for functions from standart library in your browser.
-
-![completions](https://github.com/s-kostyaev/ivy-erlang-complete/raw/master/completion.gif)
-![go to definition references](https://github.com/s-kostyaev/ivy-erlang-complete/raw/master/gotodefref.gif)
 ![find spec](https://github.com/s-kostyaev/ivy-erlang-complete/raw/master/findspec.gif)
+
+And see documentation for functions from standart library in your
+browser.
+
+## TODO
+* create company backend
 
 ## Why not `distel`?
 
-`distel` is great. I think `distel` much better then this package. But
-I can't use it on my job for erlang developement. Only licensed nodes
-can connect to cluster, distel nodes can not. I was trying to use esense
-instead. But esense project is now dead and nobody fix crashes in
-it. So I start this project.
+`distel` is great. I think `distel` much better then this package in
+some cases. But I can't configure it for work with my job's projects. 
+I thought that only licensed nodes can connect to cluster, distel
+nodes can not. It was mistake. I was trying to use esense instead. But
+esense project is now dead and nobody fix crashes in it. So I start
+this project. For now this project can do all the thins that esense
+can do and more.
 
 ## Why not `edts`?
 
-`edts` use the same way for comunication with erlang as `distel`. I
-don't use compiled beams for that - only parse source files. So `edts`
-and `distel` can be more accurate in some cases. But I work on
-improvements of this package. Also I don't like project configuration process
-at all. So this package no need it - it work out of the box (if you
-use hooks from advanced setup).
+`edts` need for project configuration for every project you
+work with. Every day I work with many erlang projects. And I don't
+like configuration process at all. So this package no need it - it
+work out of the box (if you use hooks from advanced setup). Also I
+don't use `edts` sufficient time so please add your comparison here.
 
 ## Contributing
 
-Patches are welcome :)
+Patches are welcome :) You also can send your bugreports and feature
+requests [here](https://github.com/s-kostyaev/ivy-erlang-complete/issues/new).

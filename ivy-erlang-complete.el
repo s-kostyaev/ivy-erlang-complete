@@ -546,7 +546,9 @@
      ((and thing (string-match "#?\\([^\:]+\\)\:\\([^\:]*\\)" thing))
       (let ((erl-prefix (substring thing (match-beginning 1) (match-end 1))))
         (setq ivy-erlang-complete-candidates
-              (ivy-erlang-complete--find-functions erl-prefix))
+              (if (ivy-erlang-complete--is-type-at-point)
+                  (ivy-erlang-complete--exported-types erl-prefix)
+                (ivy-erlang-complete--find-functions erl-prefix)))
         (setq ivy-erlang-complete-predicate
               (string-remove-prefix (concat erl-prefix ":") thing))))
      ((ivy-erlang-complete-export-at-point)
@@ -572,6 +574,12 @@
              (ivy-erlang-complete--get-record-names)
              (ivy-erlang-complete--find-modules)
              (ivy-erlang-complete--get-macros))))
+     ((ivy-erlang-complete--is-type-at-point)
+      (setq ivy-erlang-complete-candidates
+            (append
+             (cl-mapcar (lambda (s) (concat s "()")) erlang-predefined-types)
+             (ivy-erlang-complete--get-defined-types)
+             (ivy-erlang-complete--find-modules))))
      (t
       (setq ivy-erlang-complete-candidates
             (append
@@ -580,7 +588,11 @@
              (ivy-erlang-complete--get-record-names)
              (ivy-erlang-complete--find-modules)
              (ivy-erlang-complete--get-macros)))))
-    (setq ivy-erlang-complete-predicate (string-remove-prefix "?" thing)))
+    (setq ivy-erlang-complete-predicate (string-remove-prefix
+                                         "?"
+                                         (if (string-match-p ":" thing)
+                                             ivy-erlang-complete-predicate
+                                           thing))))
   (when (looking-back ivy-erlang-complete-predicate (line-beginning-position))
     (setq ivy-completion-beg (match-beginning 0))
     (setq ivy-completion-end (match-end 0)))
@@ -691,6 +703,23 @@ If non-nil, EXTRA-ARGS string is appended to command."
         (message "%s" cmd)
         (counsel--async-command cmd))
       nil)))
+
+(defun ivy-erlang-complete--get-defined-types ()
+  "Return types that declared in current file and included libraries."
+  (ivy-erlang-complete--find-grep-types-function
+   (append (list (file-name-nondirectory (buffer-file-name)))
+           (ivy-erlang-complete--get-included-files))))
+
+(defun ivy-erlang-complete--find-grep-types-function (files)
+  "Grep in the project directory for types defined in FILES."
+  (let
+      ((cmd
+        (format
+         "find %s %s %s | xargs grep -H -n -e '-type' | sed 's/::*//' | awk '{print $2}'"
+         ivy-erlang-complete-erlang-root
+         ivy-erlang-complete-project-root
+         (ivy-erlang-complete--prepare-def-find-args files))))
+    (split-string (shell-command-to-string cmd) "\n")))
 
 (ivy-set-display-transformer
  'ivy-erlang-complete--find-grep-def-function 'counsel-git-grep-transformer)
