@@ -205,6 +205,20 @@
      " "))
    "\n"))
 
+(defun ivy-erlang-complete--exported-types (module)
+  "Find functions in MODULE."
+  (if (not ivy-erlang-complete-project-root)
+      (ivy-erlang-complete-set-project-root))
+  (split-string
+   (shell-command-to-string
+    (string-join
+     (list
+      (ivy-erlang-complete--executable "exported-types.sh")
+      module
+      ivy-erlang-complete-project-root ivy-erlang-complete-erlang-root)
+     " "))
+   "\n"))
+
 (defun ivy-erlang-complete--find-modules ()
   "Find modules."
   (if (not ivy-erlang-complete-project-root)
@@ -607,7 +621,7 @@
        (append
         (ivy-erlang-complete--get-included-files)
         (list (file-name-nondirectory (buffer-file-name))))
-       (concat "^-type " thing "()"))))
+       (concat "^-type " thing "("))))
    ((string-match-p "^[a-z]" thing)
     (ivy-erlang-complete--find-def
      (file-name-nondirectory (buffer-file-name))
@@ -816,6 +830,21 @@ If non-nil, EXTRA-ARGS string is appended to command."
                           ":" thing "(")
                   ivy-erlang-complete-project-root
                   ivy-erlang-complete--file-suffix "find references"))
+     ((cl-find-if (lambda (x) (string-match-p (format "%s/[0-9]+" thing) x))
+                  (ivy-erlang-complete--exported-types
+                   (file-name-base (buffer-file-name))))
+      (counsel-ag (concat (file-name-base (buffer-file-name)) ":" thing "(")
+                    ivy-erlang-complete-project-root
+                    ivy-erlang-complete--file-suffix
+                    "find references"))
+     ((and
+       (string-equal "hrl" (file-name-extension (buffer-file-name)))
+       (thing-at-point-looking-at (format "^-type[ \t\n]+\\(%s\\)"
+                                         erlang-atom-regexp)))
+      (counsel-ag (concat (match-string-no-properties 1) "(")
+                    ivy-erlang-complete-project-root
+                    ivy-erlang-complete--file-suffix
+                    "find references"))
      (t (counsel-ag thing
                     ivy-erlang-complete-project-root
                     ivy-erlang-complete--file-suffix
