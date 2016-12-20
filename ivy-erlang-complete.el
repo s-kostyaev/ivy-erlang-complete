@@ -879,5 +879,104 @@ If non-nil, EXTRA-ARGS string is appended to command."
                     ivy-erlang-complete--file-suffix
                     "find references")))))
 
+(defun company-erlang-complete (command &optional arg &rest ignored)
+  "Company backend for erlang completions with company COMMAND and optional ARG as arguments another one will be IGNORED."
+  (interactive (list 'interactive))
+  (cl-case command
+    (interactive (company-begin-backend 'company-erlang-complete))
+    (prefix (ivy-erlang-complete-thing-at-point))
+    (candidates
+     ;; (company-erlang-complete--candidates arg)
+     (remove-if-not
+                 (lambda (c) (string-prefix-p ivy-erlang-complete-predicate c))
+                 (company-erlang-complete--candidates arg))
+     )
+    (annotation (get-text-property 0 'meta arg))
+    (duplicates t)
+    (sorted t)))
+
+(defun company-erlang-complete--candidates (thing)
+  "Completion candidates for THING."
+  (cond
+     ((and thing (string-match "#?\\([^\:]+\\)\:\\([^\:]*\\)" thing))
+      (let ((erl-prefix (substring thing (match-beginning 1) (match-end 1))))
+        (setq ivy-erlang-complete-candidates
+              (if (ivy-erlang-complete--is-type-at-point)
+                  (ivy-erlang-complete--exported-types erl-prefix)
+                (ivy-erlang-complete--find-functions erl-prefix)))
+        (setq ivy-erlang-complete-predicate
+              (string-remove-prefix (concat erl-prefix ":") thing))))
+     ((ivy-erlang-complete-export-at-point)
+      (setq ivy-erlang-complete--local-functions nil)
+      (setq ivy-erlang-complete-candidates
+            (cl-remove-if
+             (lambda (el)
+               (member el (ivy-erlang-complete--get-export)))
+             (ivy-erlang-complete--find-local-functions))))
+     ((ivy-erlang-complete--is-guard-at-point)
+      (setq ivy-erlang-complete-candidates
+            (append (cl-mapcar (lambda (g) (format "%s()" g))
+                               erlang-guards)
+                    erlang-operators)))
+     ((ivy-erlang-complete-record-at-point)
+      (setq ivy-erlang-complete-candidates
+            (append
+             (company-erlang-complete--get-record-fields
+              (buffer-substring-no-properties
+               (match-beginning 1) (match-end 1)))
+             (ivy-erlang-complete--find-local-vars)
+             (ivy-erlang-complete--find-local-functions)
+             (ivy-erlang-complete--get-record-names)
+             (ivy-erlang-complete--find-modules)
+             (ivy-erlang-complete--get-macros)))
+      (setq ivy-erlang-complete-predicate
+            (let ((rec (ivy-erlang-complete-record-at-point)))
+              (if (or (string-suffix-p "." rec)
+                      (string-suffix-p "}" rec))
+                  "" rec)))
+      (if (string-suffix-p "." (ivy-erlang-complete-record-at-point))
+                  (setq ivy-erlang-complete-candidates
+                        (company-erlang-complete--get-record-fields
+              (buffer-substring-no-properties
+               (match-beginning 1) (match-end 1))))))
+     ((ivy-erlang-complete--is-type-at-point)
+      (setq ivy-erlang-complete-candidates
+            (append
+             (cl-mapcar (lambda (s) (concat s "()")) erlang-predefined-types)
+             (ivy-erlang-complete--get-defined-types)
+             (ivy-erlang-complete--find-modules)))
+      (setq ivy-erlang-complete-predicate (ivy-erlang-complete-thing-at-point)))
+     (t
+      (setq ivy-erlang-complete-candidates
+            (append
+             (ivy-erlang-complete--find-local-vars)
+             (ivy-erlang-complete--find-local-functions)
+             (ivy-erlang-complete--get-record-names)
+             (ivy-erlang-complete--find-modules)
+             (ivy-erlang-complete--get-macros)))
+      (setq ivy-erlang-complete-predicate (ivy-erlang-complete-thing-at-point))))
+  (setq company-prefix ivy-erlang-complete-predicate)
+  ivy-erlang-complete-candidates)
+
+(defun company-erlang-complete--get-record-fields (record)
+  "Return list of RECORD fields."
+  (if (not ivy-erlang-complete-records)
+      (progn
+        (ivy-erlang-complete-reparse)
+        (message "Please wait for record parsing")
+        nil)
+    (cl-mapcar
+     (lambda (s)
+       (propertize
+        (car s)
+        'meta
+        (if (cdr s)
+            (let ((type
+                   (concat " :: " (string-join (ivy-erlang-complete--flatten
+                                                   (cdr s))  " | "))))
+              (set-text-properties 0 (length type) '(face success) type)
+              type))))
+     (gethash record ivy-erlang-complete-records))))
+
 (provide 'ivy-erlang-complete)
 ;;; ivy-erlang-complete.el ends here
