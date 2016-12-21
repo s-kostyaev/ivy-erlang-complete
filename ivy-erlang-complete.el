@@ -884,7 +884,7 @@ If non-nil, EXTRA-ARGS string is appended to command."
   (interactive (list 'interactive))
   (cl-case command
     (interactive (company-begin-backend 'company-erlang-complete))
-    (prefix (ivy-erlang-complete-thing-at-point))
+    (prefix (or (ivy-erlang-complete-thing-at-point) 'stop))
     (candidates
      ;; (company-erlang-complete--candidates arg)
      (remove-if-not
@@ -893,7 +893,9 @@ If non-nil, EXTRA-ARGS string is appended to command."
      )
     (annotation (get-text-property 0 'meta arg))
     (duplicates t)
-    (sorted t)))
+    (sorted t)
+    (require-match 'never)
+    (post-completion (company-template-c-like-templatify arg))))
 
 (defun company-erlang-complete--candidates (thing)
   "Completion candidates for THING."
@@ -902,8 +904,10 @@ If non-nil, EXTRA-ARGS string is appended to command."
       (let ((erl-prefix (substring thing (match-beginning 1) (match-end 1))))
         (setq ivy-erlang-complete-candidates
               (if (ivy-erlang-complete--is-type-at-point)
-                  (ivy-erlang-complete--exported-types erl-prefix)
-                (ivy-erlang-complete--find-functions erl-prefix)))
+                  (company-erlang-complete--transform-arity
+                   (ivy-erlang-complete--exported-types erl-prefix))
+                (company-erlang-complete--transform-arity
+                 (ivy-erlang-complete--find-functions erl-prefix))))
         (setq ivy-erlang-complete-predicate
               (string-remove-prefix (concat erl-prefix ":") thing))))
      ((ivy-erlang-complete-export-at-point)
@@ -943,7 +947,8 @@ If non-nil, EXTRA-ARGS string is appended to command."
       (setq ivy-erlang-complete-candidates
             (append
              (cl-mapcar (lambda (s) (concat s "()")) erlang-predefined-types)
-             (ivy-erlang-complete--get-defined-types)
+             (company-erlang-complete--transform-arity
+              (ivy-erlang-complete--get-defined-types))
              (ivy-erlang-complete--find-modules)))
       (setq ivy-erlang-complete-predicate (ivy-erlang-complete-thing-at-point)))
      (t
@@ -957,6 +962,21 @@ If non-nil, EXTRA-ARGS string is appended to command."
       (setq ivy-erlang-complete-predicate (ivy-erlang-complete-thing-at-point))))
   (setq company-prefix ivy-erlang-complete-predicate)
   ivy-erlang-complete-candidates)
+
+(defun company-erlang-complete--transform-arity (functions)
+  "Prepare FUNCTIONS to insert with company."
+  (cl-remove-if
+   #'string-empty-p
+   (cl-mapcar
+    (lambda (s) (if (and (stringp s) (string-match-p "/" s))
+                    (let ((splitted (split-string s "/")))
+                      (format "%s(%s)" (car splitted)
+                              (string-join
+                               (make-list
+                                (string-to-int
+                                 (cadr splitted)) "_") ", ")))
+                  ""))
+    functions)))
 
 (defun company-erlang-complete--get-record-fields (record)
   "Return list of RECORD fields."
