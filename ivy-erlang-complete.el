@@ -139,7 +139,8 @@
         #'xref-pop-marker-stack)
     (define-key erlang-mode-map (kbd "M-,")
       #'pop-global-mark))
-  )
+  (set (make-local-variable 'company-backends) '(company-erlang-complete))
+  (company-mode t))
 ;;;###autoload
 (defun ivy-erlang-complete-show-doc-at-point ()
   "Show doc for function from standart library."
