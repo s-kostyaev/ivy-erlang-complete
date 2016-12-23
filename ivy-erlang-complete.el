@@ -895,7 +895,7 @@ If non-nil, EXTRA-ARGS string is appended to command."
     (interactive (company-begin-backend 'company-erlang-complete))
     (prefix (or (ivy-erlang-complete-thing-at-point) (company-erlang-complete-record-at-point) 'stop))
     (candidates
-     (remove-if-not
+     (cl-remove-if-not
                  (lambda (c) (string-prefix-p ivy-erlang-complete-predicate c))
                  (company-erlang-complete--candidates arg)))
     (annotation (get-text-property 0 'meta arg))
@@ -950,29 +950,29 @@ If non-nil, EXTRA-ARGS string is appended to command."
               (company-erlang-complete--get-record-fields
                (match-string-no-properties 1)))))
    ((company-erlang-complete-record-at-point)
-    (match-string-no-properties 1)))
-  (setq ivy-erlang-complete-predicate
-        (string-remove-prefix "." (match-string-no-properties 3)))
-  (setq ivy-erlang-complete-candidates
-        (company-erlang-complete--get-record-fields
-         (match-string-no-properties 1))))
-     ((ivy-erlang-complete--is-type-at-point)
-      (setq ivy-erlang-complete-candidates
-            (append
-             (cl-mapcar (lambda (s) (concat s "()")) erlang-predefined-types)
-             (company-erlang-complete--transform-arity
-              (ivy-erlang-complete--get-defined-types))
-             (ivy-erlang-complete--find-modules)))
-      (setq ivy-erlang-complete-predicate (ivy-erlang-complete-thing-at-point)))
-     (t
-      (setq ivy-erlang-complete-candidates
-            (append
-             (ivy-erlang-complete--find-local-vars)
-             (ivy-erlang-complete--find-local-functions)
-             (ivy-erlang-complete--get-record-names)
-             (ivy-erlang-complete--find-modules)
-             (ivy-erlang-complete--get-macros)))
-      (setq ivy-erlang-complete-predicate (ivy-erlang-complete-thing-at-point))))
+    (match-string-no-properties 1)
+    (setq ivy-erlang-complete-predicate
+          (string-remove-prefix "." (match-string-no-properties 3)))
+    (setq ivy-erlang-complete-candidates
+          (company-erlang-complete--get-record-fields
+           (match-string-no-properties 1))))
+   ((ivy-erlang-complete--is-type-at-point)
+    (setq ivy-erlang-complete-candidates
+          (append
+           (cl-mapcar (lambda (s) (concat s "()")) erlang-predefined-types)
+           (company-erlang-complete--transform-arity
+            (ivy-erlang-complete--get-defined-types))
+           (ivy-erlang-complete--find-modules)))
+    (setq ivy-erlang-complete-predicate (ivy-erlang-complete-thing-at-point)))
+   (t
+    (setq ivy-erlang-complete-candidates
+          (append
+           (ivy-erlang-complete--find-local-vars)
+           (ivy-erlang-complete--find-local-functions)
+           (ivy-erlang-complete--get-record-names)
+           (ivy-erlang-complete--find-modules)
+           (ivy-erlang-complete--get-macros)))
+    (setq ivy-erlang-complete-predicate (ivy-erlang-complete-thing-at-point))))
   (setq company-prefix ivy-erlang-complete-predicate)
   ivy-erlang-complete-candidates)
 
@@ -986,7 +986,7 @@ If non-nil, EXTRA-ARGS string is appended to command."
                       (format "%s(%s)" (car splitted)
                               (string-join
                                (make-list
-                                (string-to-int
+                                (string-to-number
                                  (cadr splitted)) "_") ", ")))
                   ""))
     functions)))
