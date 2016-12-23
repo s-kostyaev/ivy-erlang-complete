@@ -918,6 +918,7 @@ If non-nil, EXTRA-ARGS string is appended to command."
       (setq ivy-erlang-complete-predicate
             (string-remove-prefix (concat erl-prefix ":") thing))))
    ((ivy-erlang-complete-export-at-point)
+    (setq ivy-erlang-complete-predicate thing)
     (setq ivy-erlang-complete--local-functions nil)
     (setq ivy-erlang-complete-candidates
           (cl-remove-if
@@ -925,8 +926,9 @@ If non-nil, EXTRA-ARGS string is appended to command."
              (member el (ivy-erlang-complete--get-export)))
            (ivy-erlang-complete--find-local-functions))))
    ((ivy-erlang-complete--is-guard-at-point)
+    (setq ivy-erlang-complete-predicate thing)
     (setq ivy-erlang-complete-candidates
-          (append (cl-mapcar (lambda (g) (format "%s()" g))
+          (append (cl-mapcar (lambda (g) (format "%s(_)" g))
                              erlang-guards)
                   erlang-operators)))
    ((ivy-erlang-complete-record-at-point)
@@ -957,13 +959,13 @@ If non-nil, EXTRA-ARGS string is appended to command."
           (company-erlang-complete--get-record-fields
            (match-string-no-properties 1))))
    ((ivy-erlang-complete--is-type-at-point)
+    (setq ivy-erlang-complete-predicate thing)
     (setq ivy-erlang-complete-candidates
           (append
            (cl-mapcar (lambda (s) (concat s "()")) erlang-predefined-types)
            (company-erlang-complete--transform-arity
             (ivy-erlang-complete--get-defined-types))
-           (ivy-erlang-complete--find-modules)))
-    (setq ivy-erlang-complete-predicate (ivy-erlang-complete-thing-at-point)))
+           (ivy-erlang-complete--find-modules))))
    (t
     (setq ivy-erlang-complete-candidates
           (append
@@ -972,7 +974,7 @@ If non-nil, EXTRA-ARGS string is appended to command."
            (ivy-erlang-complete--get-record-names)
            (ivy-erlang-complete--find-modules)
            ivy-erlang-complete-macros))
-    (setq ivy-erlang-complete-predicate (ivy-erlang-complete-thing-at-point))))
+    (setq ivy-erlang-complete-predicate thing)))
   (setq company-prefix ivy-erlang-complete-predicate)
   ivy-erlang-complete-candidates)
 
