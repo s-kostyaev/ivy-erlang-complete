@@ -939,7 +939,7 @@ If non-nil, EXTRA-ARGS string is appended to command."
            (ivy-erlang-complete--find-local-functions)
            (ivy-erlang-complete--get-record-names)
            (ivy-erlang-complete--find-modules)
-           (ivy-erlang-complete--get-macros)))
+           ivy-erlang-complete-macros))
     (setq ivy-erlang-complete-predicate
           (let ((rec (ivy-erlang-complete-record-at-point)))
             (cond ((string-suffix-p "}" rec) thing)
@@ -971,7 +971,7 @@ If non-nil, EXTRA-ARGS string is appended to command."
            (ivy-erlang-complete--find-local-functions)
            (ivy-erlang-complete--get-record-names)
            (ivy-erlang-complete--find-modules)
-           (ivy-erlang-complete--get-macros)))
+           ivy-erlang-complete-macros))
     (setq ivy-erlang-complete-predicate (ivy-erlang-complete-thing-at-point))))
   (setq company-prefix ivy-erlang-complete-predicate)
   ivy-erlang-complete-candidates)
