@@ -146,7 +146,7 @@ And see documentation for functions from standart library in your
 browser.
 
 ## TODO
-* create company backend
+[x] create [company backend](https://github.com/s-kostyaev/company-erlang)
 
 ## Why not `distel`?
 
