@@ -3,9 +3,11 @@
 
 [![License GPL 3](https://img.shields.io/badge/license-GPL_3-green.svg)](http://www.gnu.org/licenses/gpl-3.0.txt)
 [![MELPA](https://melpa.org/packages/ivy-erlang-complete-badge.svg)](https://melpa.org/#/ivy-erlang-complete)
+[![MELPA Stable](https://stable.melpa.org/packages/ivy-erlang-complete-badge.svg)](https://stable.melpa.org/#/ivy-erlang-complete)
+
 
 `ivy-erlang-complete` is context sensitive completion for erlang
-without connecting to erlang nodes.
+without connecting to erlang nodes. It also can go to definition/references/specs.
 
 ## Installation
 
