@@ -260,7 +260,7 @@
       (setq ivy-erlang-complete--local-functions
             (progn
               (let ((pos (point)))
-                (imenu--make-index-alist)
+                (ignore-errors (imenu--make-index-alist))
                 (goto-char pos))
               (cl-mapcar (lambda (elem) (car elem)) imenu--index-alist))))
   ivy-erlang-complete--local-functions)
@@ -269,8 +269,10 @@
   "Find local variables at point."
   (let* ((pos (point))
          (pos2 (progn (backward-word) (point)))
-         (function-begin (search-backward-regexp "^[a-z]"))
-         (search-string (buffer-substring-no-properties function-begin pos2)))
+         (function-begin (search-backward-regexp "^[a-z]" nil t))
+         (search-string (if function-begin
+                            (buffer-substring-no-properties function-begin pos2)
+                          "")))
     (goto-char pos)
     (cl-remove-if (lambda (s)
                     (member (concat "?" s) ivy-erlang-complete-macros))
