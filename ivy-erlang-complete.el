@@ -86,18 +86,57 @@
 (defvar ivy-erlang-complete--global-project-root nil
   "Global variable for use with async commands.")
 
+(defvar ivy-erlang-complete--setup-flycheck t
+  "Enable automatic setup flycheck.")
+
 (defun ivy-erlang-complete--executable (name)
   "Return path to executable with NAME."
   (concat ivy-erlang-complete--base "bin/" name))
 
+(when (featurep 'flycheck)
+  (defvar flycheck-erlang-include-path)
+  (defvar flycheck-erlang-library-path)
+  (defun ivy-erlang-complete-setup-flycheck (project-root)
+    "Setup flycheck for use correct paths for erlang PROJECT-ROOT with deps."
+    (setq-local flycheck-erlang-include-path
+                (append
+                 (s-split
+                  "\n"
+                  (shell-command-to-string
+                   (concat "find "
+                           project-root
+                           "/*"
+                           " -type d -name include"))
+                  t)
+                 (list project-root
+                       (concat project-root "/include")
+                       (concat project-root "/deps")
+                       default-directory
+                       (concat
+                        (locate-dominating-file
+                         default-directory
+                         "src") "include")
+                       (concat
+                        (locate-dominating-file
+                         default-directory
+                         "src") "deps"))))
+    (let ((code-path
+           (split-string (shell-command-to-string
+                          (concat "find " project-root " -type d -name ebin")))))
+      (setq-local flycheck-erlang-library-path code-path))))
 
 ;;;###autoload
 (defun ivy-erlang-complete-autosetup-project-root ()
   "Automatically setup erlang project root."
   (interactive)
-  (setq-local ivy-erlang-complete-project-root
-              (ivy-erlang-complete--find-root-by-deps))
-  ivy-erlang-complete-project-root)
+  (if ivy-erlang-complete-project-root
+      ivy-erlang-complete-project-root
+    (setq-local ivy-erlang-complete-project-root
+                (ivy-erlang-complete--find-root-by-deps))
+    (if (and ivy-erlang-complete--setup-flycheck (featurep 'flycheck))
+        (ivy-erlang-complete-setup-flycheck
+         ivy-erlang-complete-project-root))
+    ivy-erlang-complete-project-root))
 
 (defun ivy-erlang-complete--find-root-by-deps (&optional start-dir)
   "Find project root as directory with rebar dependencies start from START-DIR."
@@ -121,6 +160,7 @@
 (defun ivy-erlang-complete-init ()
   "Config ivy-erlang-complete by default."
   (interactive)
+  (ivy-erlang-complete-autosetup-project-root)
   (ivy-erlang-complete-reparse)
   (define-key erlang-mode-map (kbd "C-:")
     'ivy-erlang-complete)
@@ -138,8 +178,8 @@
       (define-key erlang-mode-map (kbd "M-,")
         #'xref-pop-marker-stack)
     (define-key erlang-mode-map (kbd "M-,")
-      #'pop-global-mark))
-  )
+      #'pop-global-mark)))
+
 ;;;###autoload
 (defun ivy-erlang-complete-show-doc-at-point ()
   "Show doc for function from standart library."

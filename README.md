@@ -20,7 +20,7 @@ You can now install package `ivy-erlang-complete` from
  * coreutils
  * sed
  * grep
- * the_silver_searcher (for finding definition, references and specs)
+ * the_silver_searcher `ag` (for finding definition, references and specs)
  
 ## Basic setup
 
@@ -39,67 +39,39 @@ But for better experience you also can add another packages for another
 features:
 
 * `rebar` for building & testing
-* `flycheck` for on the fly error checking
+* `flycheck` for on the fly error checking (will setup automatically)
 * `wrangler` for smart refactoring
 
 This is my emacs config for erlang developement:
 
 ``` emacs-lisp
 ;;;; Erlang
-(setq flycheck-erlang-include-path '("../include" "../deps"))
-
-(defun fix-erlang-project-includes (project-root)
-  "Find erlang include paths for PROJECT-ROOT with project deps."
-  (setq-local flycheck-erlang-include-path
-              (append
-               (s-split
-                "\n"
-                (shell-command-to-string
-                 (concat "find "
-                         project-root
-                         "/*"
-                         " -type d -name include"))
-                t)
-               (list project-root
-                     (concat project-root "/include")
-                     (concat project-root "/deps")
-                     default-directory
-                     (concat
-                      (locate-dominating-file
-                       default-directory
-                       "src") "include")
-                     (concat
-                      (locate-dominating-file
-                       default-directory
-                       "src") "deps")))))
-
-(defun fix-erlang-project-code-path (project-root)
-  "Find erlang include paths for PROJECT-ROOT with project deps."
-  (let ((code-path
-           (split-string (shell-command-to-string
-                        (concat "find " project-root " -type d -name ebin")))
-         ))
-    (setq-local flycheck-erlang-library-path code-path)))
-
-(require 'ivy-erlang-complete)
 (defun my-erlang-hook ()
   "Setup for erlang."
-  (let ((project-root (ivy-erlang-complete-autosetup-project-root)))
-      (fix-erlang-project-code-path project-root)
-      (fix-erlang-project-includes project-root))
-  (ivy-erlang-complete-init))
+  (require 'wrangler)
+  (ivy-erlang-complete-init)
+  (defvar erlang-extended-mode-map)
+  (define-key erlang-extended-mode-map (kbd "M-.") nil)
+  (define-key erlang-extended-mode-map (kbd "M-,") nil)
+  (define-key erlang-extended-mode-map (kbd "M-?") nil)
+  (define-key erlang-extended-mode-map (kbd "(") nil))
 (add-hook 'erlang-mode-hook #'my-erlang-hook)
 (add-hook 'after-save-hook #'ivy-erlang-complete-reparse)
+
+(add-to-list 'auto-mode-alist '("rebar\\.config$" . erlang-mode))
+(add-to-list 'auto-mode-alist '("relx\\.config$" . erlang-mode))
+(add-to-list 'auto-mode-alist '("system\\.config$" . erlang-mode))
+(add-to-list 'auto-mode-alist '("\\.app\\.src$" . erlang-mode))
 
 ;;; wrangler
 ;; install https://github.com/RefactoringTools/wrangler/blob/master/INSTALL
 ;; before usage
 (add-to-list 'load-path "/usr/lib/erlang/lib/wrangler-1.2.0/elisp")
-(require 'wrangler)
+;(require 'wrangler)
 ; Some code inspection functionalities of Wrangler generate .dot
 ; files, which can be compiled and previewed in Emacs if the
 ; Graphviz-dot mode for Emacs is enabled.
-(load-library "graphviz-dot-mode")
+;(load-library "graphviz-dot-mode")
 ```
 
 ## Current state
@@ -165,8 +137,8 @@ can do and more.
 `edts` need for project configuration for every project you
 work with. Every day I work with many erlang projects. And I don't
 like configuration process at all. So this package no need it - it
-work out of the box (if you use hooks from advanced setup). Also I
-don't use `edts` sufficient time so please add your comparison here.
+work out of the box. Also I don't use `edts` sufficient time so please
+add your comparison here.
 
 ## Contributing
 
