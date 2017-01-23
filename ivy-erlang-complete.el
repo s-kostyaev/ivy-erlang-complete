@@ -1,4 +1,4 @@
-;;; ivy-erlang-complete.el --- Erlang completion at point using ivy.
+;;; ivy-erlang-complete.el --- Erlang completion at point using ivy. -*- lexical-binding: t -*-
 
 
 ;; Copyright (C) 2016 Sergey Kostyaev
@@ -731,20 +731,16 @@ If non-nil, EXTRA-ARGS string is appended to command."
     (setq-local files "*"))
   (if (< (length string) 3)
       (counsel-more-chars 3)
-    (let ((qregex (shell-quote-argument
-                   (counsel-unquote-regex-parens
-                    (setq ivy--old-re
-                          (ivy--regex string))))))
-      (let ((cmd
-             (format
-              "find %s %s %s | xargs grep -H -n -e \"\"\"%s\"\"\" -e \"\"\"-type %s\"\"\""
-              ivy-erlang-complete-erlang-root
-              ivy-erlang-complete--global-project-root
-              (ivy-erlang-complete--prepare-def-find-args files)
-              string (string-remove-prefix "^" string))))
-        (message "%s" cmd)
-        (counsel--async-command cmd))
-      nil)))
+    (let ((cmd
+           (format
+            "find %s %s %s | xargs grep -H -n -e \"\"\"%s\"\"\" -e \"\"\"-type %s\"\"\""
+            ivy-erlang-complete-erlang-root
+            ivy-erlang-complete--global-project-root
+            (ivy-erlang-complete--prepare-def-find-args files)
+            string (string-remove-prefix "^" string))))
+      (message "%s" cmd)
+      (counsel--async-command cmd))
+    nil))
 
 (defun ivy-erlang-complete--get-defined-types ()
   "Return types that declared in current file and included libraries."
