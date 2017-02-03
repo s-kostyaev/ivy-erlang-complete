@@ -5,7 +5,7 @@
 
 ;; Author: Sergey Kostyaev <feo.me@ya.ru>
 ;; Version: 1.0.0
-;; Keywords: erlang ivy completion
+;; Keywords: languages tools
 ;;
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -100,14 +100,12 @@
     "Setup flycheck for use correct paths for erlang PROJECT-ROOT with deps."
     (setq-local flycheck-erlang-include-path
                 (append
-                 (s-split
-                  "\n"
+                 (split-string
                   (shell-command-to-string
                    (concat "find "
                            project-root
                            "/*"
-                           " -type d -name include"))
-                  t)
+                           " -type d -name include")))
                  (list project-root
                        (concat project-root "/include")
                        (concat project-root "/deps")
@@ -213,8 +211,8 @@
 (defvar ivy-erlang-complete--export-regexp
   "-export([[:space:]\n]*\\[[\n[:space:]]*[a-z/0-9\n[:space:]\,_]*][\n[:space:]]*).")
 
-(defvar-local last-erlang-comment nil)
-(defun copy-buffer-no-comments ()
+(defvar-local ivy-erlang-complete--last-erlang-comment nil)
+(defun ivy-erlang-complete--copy-buffer-no-comments ()
   "Copy current buffer to new one with removing comments."
   (let* ((old-buf (buffer-name))
          (new-buf (concat "*" old-buf "*"))
@@ -226,7 +224,8 @@
       (insert content)
       (goto-char (point-min))
       (while (search-forward-regexp
-              ivy-erlang-complete--comment-regexp last-erlang-comment t)
+              ivy-erlang-complete--comment-regexp
+              ivy-erlang-complete--last-erlang-comment t)
         (replace-match (make-string (length (match-string 0)) ?\ )))
       (goto-char pos))
     new-buf))
@@ -341,7 +340,8 @@
 
 (defun ivy-erlang-complete-export-at-point ()
   "Return the erlang export at point, or nil if none is found."
-  (with-current-buffer (get-buffer-create (copy-buffer-no-comments))
+  (with-current-buffer (get-buffer-create
+                        (ivy-erlang-complete--copy-buffer-no-comments))
     (when (thing-at-point-looking-at
            ivy-erlang-complete--export-regexp
            500)
