@@ -929,7 +929,8 @@ If non-nil, EXTRA-ARGS string is appended to command."
                               (and
                                (thing-at-point-looking-at "\"\\([^\n]+\\)\"")
                                (match-string-no-properties 1))
-                              (symbol-at-point)))
+                              (symbol-at-point)
+                              ""))
                      ivy-erlang-complete-project-root))
 
 (provide 'ivy-erlang-complete)
