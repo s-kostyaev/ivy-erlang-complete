@@ -917,5 +917,20 @@ If non-nil, EXTRA-ARGS string is appended to command."
                     ivy-erlang-complete--file-suffix
                     "find references")))))
 
+;;;###autoload
+(defun ivy-erlang-complete-find-file ()
+  "Find file in current project."
+  (interactive)
+  (if (> emacs-major-version 24)
+      (xref-push-marker-stack)
+    (push-mark))
+  (counsel-file-jump (format "%s"
+                             (or
+                              (and
+                               (thing-at-point-looking-at "\"\\([^\n]+\\)\"")
+                               (match-string-no-properties 1))
+                              (symbol-at-point)))
+                     ivy-erlang-complete-project-root))
+
 (provide 'ivy-erlang-complete)
 ;;; ivy-erlang-complete.el ends here
