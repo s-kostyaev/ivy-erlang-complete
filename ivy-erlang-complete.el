@@ -89,6 +89,9 @@
 (defvar ivy-erlang-complete--setup-flycheck t
   "Enable automatic setup flycheck.")
 
+(defvar ivy-erlang-complete-use-default-keys t
+  "Enable default keybindings in init.")
+
 (defun ivy-erlang-complete--executable (name)
   "Return path to executable with NAME."
   (concat ivy-erlang-complete--base "bin/" name))
@@ -160,23 +163,27 @@
   (interactive)
   (ivy-erlang-complete-autosetup-project-root)
   (ivy-erlang-complete-reparse)
-  (define-key erlang-mode-map (kbd "C-:")
-    'ivy-erlang-complete)
-  (define-key erlang-mode-map (kbd "C-c C-h")
-    'ivy-erlang-complete-show-doc-at-point)
-  (define-key erlang-mode-map (kbd "C-c C-e")
-    #'ivy-erlang-complete-set-project-root)
-  (define-key erlang-mode-map (kbd "M-.")
-    #'ivy-erlang-complete-find-definition)
-  (define-key erlang-mode-map (kbd "M-?")
-    #'ivy-erlang-complete-find-references)
-  (define-key erlang-mode-map (kbd "C-c C-f")
-    #'ivy-erlang-complete-find-spec)
-  (if (> emacs-major-version 24)
-      (define-key erlang-mode-map (kbd "M-,")
-        #'xref-pop-marker-stack)
-    (define-key erlang-mode-map (kbd "M-,")
-      #'pop-global-mark)))
+  (if ivy-erlang-complete-use-default-keys
+      (progn
+        (define-key erlang-mode-map (kbd "C-:")
+          'ivy-erlang-complete)
+        (define-key erlang-mode-map (kbd "C-c C-h")
+          'ivy-erlang-complete-show-doc-at-point)
+        (define-key erlang-mode-map (kbd "C-c C-e")
+          #'ivy-erlang-complete-set-project-root)
+        (define-key erlang-mode-map (kbd "M-.")
+          #'ivy-erlang-complete-find-definition)
+        (define-key erlang-mode-map (kbd "M-?")
+          #'ivy-erlang-complete-find-references)
+        (define-key erlang-mode-map (kbd "C-c C-f")
+          #'ivy-erlang-complete-find-spec)
+        (if (> emacs-major-version 24)
+            (define-key erlang-mode-map (kbd "M-,")
+              #'xref-pop-marker-stack)
+          (define-key erlang-mode-map (kbd "M-,")
+            #'pop-global-mark))
+        (define-key erlang-mode-map (kbd "C-c C-o")
+          #'ivy-erlang-complete-find-file))))
 
 ;;;###autoload
 (defun ivy-erlang-complete-show-doc-at-point ()
