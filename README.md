@@ -7,7 +7,9 @@
 
 
 `ivy-erlang-complete` is context sensitive completion for erlang
-without connecting to erlang nodes. It also can go to definition/references/specs.
+without connecting to erlang nodes. It also can go to
+definition/references/specs and find files in current project. Project
+will be setup automatically based on rebar or rebar3 configs and some heuristics.
 
 ## Installation
 
@@ -73,6 +75,24 @@ This is my emacs config for erlang developement:
 ; Graphviz-dot mode for Emacs is enabled.
 ;(load-library "graphviz-dot-mode")
 ```
+
+### Default keybindings
+By default next keybindings will be setup (can be disabled by setting
+variable `ivy-erlang-complete-use-default-keys` to `nil`):
+
+key | function | description
+--- | -------- | -----------
+`C-:` | `ivy-erlang-complete` | start completion at point
+`C-c C-h` | `ivy-erlang-complete-show-doc-at-point` | show docs for function under point (from standart library) in your browser
+`C-c C-e` | `ivy-erlang-complete-set-project-root` | manually setup project root for strange cases (if you find that case please [open issue](https://github.com/s-kostyaev/ivy-erlang-complete/issues/new))
+`M-.` | `ivy-erlang-complete-find-definition` | go to definition
+`M-?` | `ivy-erlang-complete-find-references` | go to references
+`C-c C-f` | `ivy-erlang-complete-find-spec` | go to spec or callback definition
+`M-,` | `xref-pop-marker-stack` | for emacs 25+ go back
+`M-,` | `pop-global-mark` | for emacs 24 go back
+`C-c C-o` | `ivy-erlang-complete-find-file` | find file in current project (preselect file or symbol under point)
+
+
 
 ## Current state
 
