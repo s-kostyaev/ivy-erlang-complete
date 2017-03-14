@@ -946,7 +946,6 @@ If non-nil, EXTRA-ARGS string is appended to command."
                               ""))
                      ivy-erlang-complete-project-root))
 
-;; TODO: add split extracted specs and match them by arity
 ;; TODO: add eldoc for callbacks
 ;; TODO: if no spec and no callback implementation under point maybe use function definition head as eldoc ?
 ;; TODO: add highlighting for current argument
@@ -962,11 +961,19 @@ If non-nil, EXTRA-ARGS string is appended to command."
          (info (if (string-match "#?\\([^\:]+\\)\:\\([^\:]*\\)" mod-fun)
                    (let ((mod (match-string-no-properties 1 mod-fun))
                          (fun (match-string-no-properties 2 mod-fun)))
-                     (shell-command-to-string
-                      (format "find %s %s -name '%s.erl' | xargs awk '/^-spec %s\\(/,/\\.$/'"
-                              ivy-erlang-complete-project-root
-                              ivy-erlang-complete-erlang-root
-                              mod fun)))
+                     (cl-find-if
+                      (lambda (el)
+                        (with-temp-buffer
+                          (insert el)
+                          (goto-char 0)
+                          (equal arity (erlang-get-arity-after-regexp "[^(]*("))))
+                      (cl-mapcar (lambda (s) (concat (string-trim s) "."))
+                                 (split-string
+                                  (shell-command-to-string
+                                   (format "find %s %s -name '%s.erl' | xargs awk '/^-spec %s\\(/,/\\.$/'"
+                                           ivy-erlang-complete-project-root
+                                           ivy-erlang-complete-erlang-root
+                                           mod fun)) "\\\.$"))))
                  nil)))
     (goto-char pos)
     info))
