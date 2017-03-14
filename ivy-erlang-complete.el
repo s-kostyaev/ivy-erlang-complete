@@ -37,8 +37,11 @@
 
 (defconst ivy-erlang-complete--base (file-name-directory load-file-name))
 
-(defvar ivy-erlang-complete-erlang-root "/usr/lib/erlang/"
-  "Path to erlang root.")
+(defgroup ivy-erlang-complete nil
+  "`ivy-erlang-complete' - context sensitive erlang completion and more with `ivy' frontend.")
+
+(defcustom ivy-erlang-complete-erlang-root "/usr/lib/erlang/"
+  "Path to erlang root." :type 'string :group 'ivy-erlang-complete)
 
 (defvar ivy-erlang-complete-project-root nil
   "Path to erlang project root.")
@@ -86,14 +89,17 @@
 (defvar ivy-erlang-complete--global-project-root nil
   "Global variable for use with async commands.")
 
-(defvar ivy-erlang-complete--setup-flycheck t
-  "Enable automatic setup flycheck.")
+(defcustom ivy-erlang-complete--setup-flycheck t
+  "Enable automatic setup flycheck."
+  :type 'boolean :group 'ivy-erlang-complete)
 
-(defvar ivy-erlang-complete-use-default-keys t
-  "Enable default keybindings in init.")
+(defcustom ivy-erlang-complete-use-default-keys t
+  "Enable default keybindings in init."
+  :type 'boolean :group 'ivy-erlang-complete)
 
-(defvar ivy-erlang-complete-enable-eldoc t
-  "Enable eldoc.")
+(defcustom ivy-erlang-complete-enable-eldoc t
+  "Enable eldoc."
+  :type 'boolean :group 'ivy-erlang-complete)
 
 (defun ivy-erlang-complete--executable (name)
   "Return path to executable with NAME."
