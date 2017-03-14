@@ -92,6 +92,9 @@
 (defvar ivy-erlang-complete-use-default-keys t
   "Enable default keybindings in init.")
 
+(defvar ivy-erlang-complete-enable-eldoc t
+  "Enable eldoc.")
+
 (defun ivy-erlang-complete--executable (name)
   "Return path to executable with NAME."
   (concat ivy-erlang-complete--base "bin/" name))
@@ -183,7 +186,10 @@
           (define-key erlang-mode-map (kbd "M-,")
             #'pop-global-mark))
         (define-key erlang-mode-map (kbd "C-c C-o")
-          #'ivy-erlang-complete-find-file))))
+          #'ivy-erlang-complete-find-file)))
+  (if ivy-erlang-complete-enable-eldoc
+      (set (make-local-variable 'eldoc-documentation-function)
+         'ivy-erlang-complete-eldoc)))
 
 ;;;###autoload
 (defun ivy-erlang-complete-show-doc-at-point ()
@@ -939,6 +945,31 @@ If non-nil, EXTRA-ARGS string is appended to command."
                               (symbol-at-point)
                               ""))
                      ivy-erlang-complete-project-root))
+
+;; TODO: add split extracted specs and match them by arity
+;; TODO: add eldoc for callbacks
+;; TODO: if no spec and no callback implementation under point maybe use function definition head as eldoc ?
+;; TODO: add highlighting for current argument
+(defun ivy-erlang-complete-eldoc ()
+  "Function for support eldoc."
+  (let* ((pos (point))
+         (mod-fun (progn
+                    (ignore-errors (backward-up-list))
+                    (ivy-erlang-complete-thing-at-point)))
+         (arity (progn
+                  (forward-char)
+                  (erlang-get-arity)))
+         (info (if (string-match "#?\\([^\:]+\\)\:\\([^\:]*\\)" mod-fun)
+                   (let ((mod (match-string-no-properties 1 mod-fun))
+                         (fun (match-string-no-properties 2 mod-fun)))
+                     (shell-command-to-string
+                      (format "find %s %s -name '%s.erl' | xargs awk '/^-spec %s\\(/,/\\.$/'"
+                              ivy-erlang-complete-project-root
+                              ivy-erlang-complete-erlang-root
+                              mod fun)))
+                 nil)))
+    (goto-char pos)
+    info))
 
 (provide 'ivy-erlang-complete)
 ;;; ivy-erlang-complete.el ends here
