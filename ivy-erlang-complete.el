@@ -101,6 +101,10 @@
   "Enable eldoc."
   :type 'boolean :group 'ivy-erlang-complete)
 
+(defcustom ivy-erlang-complete-enable-fun-head-eldoc t
+  "Enable function head as eldoc if no specs or callbacks at point."
+  :type 'boolean :group 'ivy-erlang-complete)
+
 (defun ivy-erlang-complete--executable (name)
   "Return path to executable with NAME."
   (concat ivy-erlang-complete--base "bin/" name))
@@ -951,7 +955,6 @@ If non-nil, EXTRA-ARGS string is appended to command."
                               ""))
                      ivy-erlang-complete-project-root))
 
-;; TODO: if no spec and no callback implementation under point maybe use function definition head as eldoc ?
 (defun ivy-erlang-complete-eldoc ()
   "Function for support eldoc."
   (let* ((pos (point))
@@ -964,28 +967,53 @@ If non-nil, EXTRA-ARGS string is appended to command."
          (info (cond ((string-match "#?\\([^\:]+\\)\:\\([^\:]*\\)" mod-fun)
                       (let ((mod (match-string-no-properties 1 mod-fun))
                             (fun (match-string-no-properties 2 mod-fun)))
-                        (ivy-erlang-complete--match-by-arity
-                         (cl-mapcar (lambda (s) (concat (string-trim s) "."))
-                                    (split-string
-                                     (shell-command-to-string
-                                      (format "find %s %s -name '%s.erl' | xargs awk '/^-spec %s\\(/,/\\.$/'"
-                                              ivy-erlang-complete-project-root
-                                              ivy-erlang-complete-erlang-root
-                                              mod fun)) "\\\.$"))
-                         arity)))
+                        (or (ivy-erlang-complete--match-by-arity
+                             (cl-mapcar (lambda (s) (concat (string-trim s) "."))
+                                        (split-string
+                                         (shell-command-to-string
+                                          (format "find %s %s -name '%s.erl' | xargs awk '/^-spec %s\\(/,/\\.$/'"
+                                                  ivy-erlang-complete-project-root
+                                                  ivy-erlang-complete-erlang-root
+                                                  mod fun)) "\\\.$"))
+                             arity)
+                            (when ivy-erlang-complete-enable-fun-head-eldoc
+                              (ivy-erlang-complete--match-by-arity
+                               (cl-mapcar (lambda (s) (string-trim s))
+                                          (split-string
+                                           (shell-command-to-string
+                                            (format "find %s %s -name '%s.erl' | xargs awk '/^%s\\(/,/->/'"
+                                                    ivy-erlang-complete-project-root
+                                                    ivy-erlang-complete-erlang-root
+                                                    mod fun)) "->"))
+                               arity)))))
                      ((ivy-erlang-complete--extract-behaviours (buffer-file-name))
-                      (ivy-erlang-complete--match-by-arity
-                       (cl-mapcar (lambda (s) (concat (string-trim s) "."))
-                                  (split-string
-                                   (shell-command-to-string
-                                    (format "find %s %s %s | xargs awk '/^-callback %s\\(/,/\\.$/'"
-                                            ivy-erlang-complete-project-root
-                                            ivy-erlang-complete-erlang-root
-                                            (ivy-erlang-complete--prepare-find-args
-                                             (ivy-erlang-complete--extract-behaviours (buffer-file-name)))
-                                            mod-fun)) "\\\.$"))
-                       arity))
-                     (t nil))))
+                      (or (ivy-erlang-complete--match-by-arity
+                           (cl-mapcar (lambda (s) (concat (string-trim s) "."))
+                                      (split-string
+                                       (shell-command-to-string
+                                        (format "find %s %s %s | xargs awk '/^-callback %s\\(/,/\\.$/'"
+                                                ivy-erlang-complete-project-root
+                                                ivy-erlang-complete-erlang-root
+                                                (ivy-erlang-complete--prepare-find-args
+                                                 (ivy-erlang-complete--extract-behaviours (buffer-file-name)))
+                                                mod-fun)) "\\\.$"))
+                           arity)
+                          (when ivy-erlang-complete-enable-fun-head-eldoc
+                            (ivy-erlang-complete--match-by-arity
+                             (cl-mapcar (lambda (s) (string-trim s))
+                                        (split-string
+                                         (shell-command-to-string
+                                          (format "awk '/^%s\\(/,/->/' '%s'"
+                                                  mod-fun (expand-file-name (buffer-file-name)))) "->"))
+                             arity))))
+                     (t (when ivy-erlang-complete-enable-fun-head-eldoc
+                          (ivy-erlang-complete--match-by-arity
+                           (cl-mapcar (lambda (s) (string-trim s))
+                                      (split-string
+                                       (shell-command-to-string
+                                        (format "awk '/^%s\\(/,/->/' '%s'"
+                                                mod-fun (expand-file-name (buffer-file-name)))) "->"))
+                           arity))))))
     (goto-char pos)
     (if (not (and (stringp info)
                   (string-equal "." info)))
