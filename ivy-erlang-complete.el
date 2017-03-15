@@ -1033,7 +1033,9 @@ If non-nil, EXTRA-ARGS string is appended to command."
                    (setq res (+ 1 res)))
                  (forward-sexp 1))))
         (goto-char cur-pos)
-        res)
+        (if (equal (char-after) ?\,)
+            (- res 1)
+         res))
     (error nil)))
 
 (defun ivy-erlang-complete--highlight-nth-arg (n exp)
