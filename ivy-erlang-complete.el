@@ -981,7 +981,7 @@ If non-nil, EXTRA-ARGS string is appended to command."
                                (cl-mapcar (lambda (s) (string-trim s))
                                           (split-string
                                            (shell-command-to-string
-                                            (format "find %s %s -name '%s.erl' | xargs awk '/^%s\\(/,/->/'"
+                                            (format "find %s %s -name '%s.erl' | xargs awk '/^%s\\(/,/->/' | sed 's/->.*$/->/'"
                                                     ivy-erlang-complete-project-root
                                                     ivy-erlang-complete-erlang-root
                                                     mod fun)) "->"))
@@ -1003,7 +1003,7 @@ If non-nil, EXTRA-ARGS string is appended to command."
                              (cl-mapcar (lambda (s) (string-trim s))
                                         (split-string
                                          (shell-command-to-string
-                                          (format "awk '/^%s\\(/,/->/' '%s'"
+                                          (format "awk '/^%s\\(/,/->/' '%s' | sed 's/->.*$/->/'"
                                                   mod-fun (expand-file-name (buffer-file-name)))) "->"))
                              arity))))
                      (t (when ivy-erlang-complete-enable-fun-head-eldoc
@@ -1011,7 +1011,7 @@ If non-nil, EXTRA-ARGS string is appended to command."
                            (cl-mapcar (lambda (s) (string-trim s))
                                       (split-string
                                        (shell-command-to-string
-                                        (format "awk '/^%s\\(/,/->/' '%s'"
+                                        (format "awk '/^%s\\(/,/->/' '%s' | sed 's/->.*$/->/'"
                                                 mod-fun (expand-file-name (buffer-file-name)))) "->"))
                            arity))))))
     (goto-char pos)
