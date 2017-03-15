@@ -952,7 +952,6 @@ If non-nil, EXTRA-ARGS string is appended to command."
                               ""))
                      ivy-erlang-complete-project-root))
 
-;; TODO: add eldoc for callbacks
 ;; TODO: if no spec and no callback implementation under point maybe use function definition head as eldoc ?
 ;; TODO: add highlighting for current argument
 (defun ivy-erlang-complete-eldoc ()
@@ -964,25 +963,42 @@ If non-nil, EXTRA-ARGS string is appended to command."
          (arity (progn
                   (forward-char)
                   (erlang-get-arity)))
-         (info (if (string-match "#?\\([^\:]+\\)\:\\([^\:]*\\)" mod-fun)
-                   (let ((mod (match-string-no-properties 1 mod-fun))
-                         (fun (match-string-no-properties 2 mod-fun)))
-                     (cl-find-if
-                      (lambda (el)
-                        (with-temp-buffer
-                          (insert el)
-                          (goto-char 0)
-                          (equal arity (erlang-get-arity-after-regexp "[^(]*("))))
-                      (cl-mapcar (lambda (s) (concat (string-trim s) "."))
-                                 (split-string
-                                  (shell-command-to-string
-                                   (format "find %s %s -name '%s.erl' | xargs awk '/^-spec %s\\(/,/\\.$/'"
-                                           ivy-erlang-complete-project-root
-                                           ivy-erlang-complete-erlang-root
-                                           mod fun)) "\\\.$"))))
-                 nil)))
+         (info (cond ((string-match "#?\\([^\:]+\\)\:\\([^\:]*\\)" mod-fun)
+                      (let ((mod (match-string-no-properties 1 mod-fun))
+                            (fun (match-string-no-properties 2 mod-fun)))
+                        (ivy-erlang-complete--match-by-arity
+                         (cl-mapcar (lambda (s) (concat (string-trim s) "."))
+                                    (split-string
+                                     (shell-command-to-string
+                                      (format "find %s %s -name '%s.erl' | xargs awk '/^-spec %s\\(/,/\\.$/'"
+                                              ivy-erlang-complete-project-root
+                                              ivy-erlang-complete-erlang-root
+                                              mod fun)) "\\\.$"))
+                         arity)))
+                     ((ivy-erlang-complete--extract-behaviours (buffer-file-name))
+                      (ivy-erlang-complete--match-by-arity
+                       (cl-mapcar (lambda (s) (concat (string-trim s) "."))
+                                  (split-string
+                                   (shell-command-to-string
+                                    (format "find %s %s %s | xargs awk '/^-callback %s\\(/,/\\.$/'"
+                                            ivy-erlang-complete-project-root
+                                            ivy-erlang-complete-erlang-root
+                                            (ivy-erlang-complete--prepare-find-args
+                                             (ivy-erlang-complete--extract-behaviours (buffer-file-name)))
+                                            mod-fun)) "\\\.$"))
+                       arity))
+                     (t nil))))
     (goto-char pos)
     info))
+
+(defun ivy-erlang-complete--match-by-arity (list arity)
+  "Return first element from LIST matched by ARITY."
+  (cl-find-if
+   (lambda (el)
+     (with-temp-buffer
+       (insert el)
+       (goto-char 0)
+       (equal arity (erlang-get-arity-after-regexp "[^(]*(")))) list))
 
 (provide 'ivy-erlang-complete)
 ;;; ivy-erlang-complete.el ends here
