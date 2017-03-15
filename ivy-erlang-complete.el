@@ -1003,5 +1003,38 @@ If non-nil, EXTRA-ARGS string is appended to command."
        (goto-char 0)
        (equal arity (erlang-get-arity-after-regexp "[^(]*(")))) list))
 
+(defun ivy-erlang-complete--cur-arg-num ()
+  "Return the number of current argument in argument list at point, or nil."
+  (condition-case nil
+      (let ((cur-pos (point))
+            (res 0)
+            (cont t))
+        (ignore-errors (backward-up-list))
+        (forward-char 1)
+        (while cont
+          (cond ((eobp)
+                 (setq res nil)
+                 (setq cont nil))
+                ((> (point) cur-pos)
+                 (setq cont nil))
+                ((looking-at "\\s *)")
+                 (setq cont nil))
+                ((looking-at "\\s *\\($\\|%\\)")
+                 (forward-line 1))
+                ((looking-at "\\s *<<[^>]*?>>")
+                 (when (zerop res)
+                   (setq res (+ 1 res)))
+                 (goto-char (match-end 0)))
+                ((looking-at "\\s *,")
+                 (setq res (+ 1 res))
+                 (goto-char (match-end 0)))
+                (t
+                 (when (zerop res)
+                   (setq res (+ 1 res)))
+                 (forward-sexp 1))))
+        (goto-char cur-pos)
+        res)
+    (error nil)))
+
 (provide 'ivy-erlang-complete)
 ;;; ivy-erlang-complete.el ends here
