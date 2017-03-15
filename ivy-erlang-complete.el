@@ -757,7 +757,6 @@ If non-nil, EXTRA-ARGS string is appended to command."
             ivy-erlang-complete--global-project-root
             (ivy-erlang-complete--prepare-def-find-args files)
             string (string-remove-prefix "^" string))))
-      (message "%s" cmd)
       (counsel--async-command cmd))
     nil))
 
@@ -953,7 +952,6 @@ If non-nil, EXTRA-ARGS string is appended to command."
                      ivy-erlang-complete-project-root))
 
 ;; TODO: if no spec and no callback implementation under point maybe use function definition head as eldoc ?
-;; TODO: add highlighting for current argument
 (defun ivy-erlang-complete-eldoc ()
   "Function for support eldoc."
   (let* ((pos (point))
@@ -991,7 +989,9 @@ If non-nil, EXTRA-ARGS string is appended to command."
     (goto-char pos)
     (if (not (and (stringp info)
                   (string-equal "." info)))
-        info
+        (ivy-erlang-complete--highlight-nth-arg
+         (ivy-erlang-complete--cur-arg-num)
+         info)
       nil)))
 
 (defun ivy-erlang-complete--match-by-arity (list arity)
@@ -1035,6 +1035,43 @@ If non-nil, EXTRA-ARGS string is appended to command."
         (goto-char cur-pos)
         res)
     (error nil)))
+
+(defun ivy-erlang-complete--highlight-nth-arg (n exp)
+  "Highlight Nth argument in EXP."
+  (if (or (zerop n) (not exp))
+      exp
+    (with-temp-buffer
+      (insert exp)
+      (goto-char 0)
+      (search-forward-regexp "[^(]*(" nil t)
+      (let ((cont t)
+            (begin nil)
+            (end nil))
+        (if (equal n 1)
+            (setq begin (point)))
+        (forward-sexp)
+        (while cont
+           (cond ((eobp)
+                 (setq cont nil))
+                ((and (not begin)
+                      (equal n 1))
+                 (setq begin (point)))
+                ((equal n 0)
+                 (setq cont nil))
+                ((looking-at "\\s *)")
+                 (setq cont nil))
+                ((looking-at "\\s *\\($\\|%\\)")
+                 (forward-line 1))
+                ((looking-at "\\s *<<[^>]*?>>")
+                 (goto-char (match-end 0)))
+                ((looking-at "\\s *,")
+                 (setq n (- n 1))
+                 (goto-char (match-end 0)))
+                (t
+                 (forward-sexp 1))))
+        (setq end (point))
+        (if begin (add-text-properties begin end '(face eldoc-highlight-function-argument))))
+      (buffer-substring (point-min) (point-max)))))
 
 (provide 'ivy-erlang-complete)
 ;;; ivy-erlang-complete.el ends here
