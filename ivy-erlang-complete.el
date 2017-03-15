@@ -989,7 +989,10 @@ If non-nil, EXTRA-ARGS string is appended to command."
                        arity))
                      (t nil))))
     (goto-char pos)
-    info))
+    (if (not (and (stringp info)
+                  (string-equal "." info)))
+        info
+      nil)))
 
 (defun ivy-erlang-complete--match-by-arity (list arity)
   "Return first element from LIST matched by ARITY."
