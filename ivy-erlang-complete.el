@@ -955,6 +955,7 @@ If non-nil, EXTRA-ARGS string is appended to command."
                               ""))
                      ivy-erlang-complete-project-root))
 
+;; TODO: add eldoc support for macros
 (defun ivy-erlang-complete-eldoc ()
   "Function for support eldoc."
   (let* ((pos (point))
@@ -998,6 +999,13 @@ If non-nil, EXTRA-ARGS string is appended to command."
                                                  (ivy-erlang-complete--extract-behaviours (buffer-file-name)))
                                                 mod-fun)) "\\\.$"))
                            arity)
+                          (ivy-erlang-complete--match-by-arity
+                           (cl-mapcar (lambda (s) (concat (string-trim s) "."))
+                                      (split-string
+                                       (shell-command-to-string
+                                        (format "awk '/^-spec %s\\(/,/\\.$/' '%s'"
+                                                mod-fun (expand-file-name (buffer-file-name)))) "\\\.$"))
+                           arity)
                           (when ivy-erlang-complete-enable-fun-head-eldoc
                             (ivy-erlang-complete--match-by-arity
                              (cl-mapcar (lambda (s) (string-trim s))
@@ -1006,14 +1014,22 @@ If non-nil, EXTRA-ARGS string is appended to command."
                                           (format "awk '/^%s\\(/,/->/' '%s' | sed 's/->.*$/->/'"
                                                   mod-fun (expand-file-name (buffer-file-name)))) "->"))
                              arity))))
-                     (t (when ivy-erlang-complete-enable-fun-head-eldoc
-                          (ivy-erlang-complete--match-by-arity
-                           (cl-mapcar (lambda (s) (string-trim s))
-                                      (split-string
-                                       (shell-command-to-string
-                                        (format "awk '/^%s\\(/,/->/' '%s' | sed 's/->.*$/->/'"
-                                                mod-fun (expand-file-name (buffer-file-name)))) "->"))
-                           arity))))))
+                     (t (or
+                         (ivy-erlang-complete--match-by-arity
+                          (cl-mapcar (lambda (s) (concat (string-trim s) "."))
+                                     (split-string
+                                      (shell-command-to-string
+                                       (format "awk '/^-spec %s\\(/,/\\.$/' '%s'"
+                                               mod-fun (expand-file-name (buffer-file-name)))) "\\\.$"))
+                          arity)
+                         (when ivy-erlang-complete-enable-fun-head-eldoc
+                           (ivy-erlang-complete--match-by-arity
+                            (cl-mapcar (lambda (s) (string-trim s))
+                                       (split-string
+                                        (shell-command-to-string
+                                         (format "awk '/^%s\\(/,/->/' '%s' | sed 's/->.*$/->/'"
+                                                 mod-fun (expand-file-name (buffer-file-name)))) "->"))
+                            arity)))))))
     (goto-char pos)
     (if (not (and (stringp info)
                   (string-equal "." info)))

@@ -9,7 +9,8 @@
 `ivy-erlang-complete` is context sensitive completion for erlang
 without connecting to erlang nodes. It also can go to
 definition/references/specs and find files in current project. Project
-will be setup automatically based on rebar or rebar3 configs and some heuristics.
+will be setup automatically based on rebar or rebar3 configs and some
+heuristics. For now this package also support eldoc.
 
 ## Installation
 
@@ -140,7 +141,10 @@ And see documentation for functions from standart library in your
 browser.
 
 ## TODO
-[x] create [company backend](https://github.com/s-kostyaev/company-erlang)
+- [x] create [company backend](https://github.com/s-kostyaev/company-erlang)
+- [x] add eldoc support
+- [ ] improve working with macros (add arity and eldoc)
+- [ ] renew gifs in this file
 
 ## Why not `distel`?
 
