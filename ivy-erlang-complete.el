@@ -86,6 +86,10 @@
   (make-hash-table :test 'equal)
   "Memoizaton for behaviours.")
 
+(defvar-local ivy-erlang-complete--eldocs
+  (make-hash-table :test 'equal)
+  "Memoizaton for eldocs.")
+
 (defvar ivy-erlang-complete--global-project-root nil
   "Global variable for use with async commands.")
 
@@ -955,8 +959,40 @@ If non-nil, EXTRA-ARGS string is appended to command."
                               ""))
                      ivy-erlang-complete-project-root))
 
-;; TODO: add eldoc support for macros
 (defun ivy-erlang-complete-eldoc ()
+  "Function for async support eldoc."
+  (let* ((pos (point))
+         (mod-fun (progn
+                    (ignore-errors (backward-up-list))
+                    (ivy-erlang-complete-thing-at-point)))
+         (arity (progn
+                  (forward-char)
+                  (erlang-get-arity)))
+         (key (format "%s/%s" mod-fun arity))
+         (eldoc (gethash key ivy-erlang-complete--eldocs)))
+    (goto-char pos)
+   (cond
+    ((string-equal eldoc "in-progress")
+     nil)
+    ((eq eldoc nil)
+     (puthash key "in-progress" ivy-erlang-complete--eldocs)
+     (async-start
+         `(lambda ()
+            ,(async-inject-variables "load-path")
+            (require 'ivy-erlang-complete)
+            (find-file ,(buffer-file-name))
+            (setq eval-expression-print-length nil)
+            (setq print-length nil)
+            (goto-char ,(point))
+            (ivy-erlang-complete--eldoc))
+         `(lambda (res)
+            (with-current-buffer ,(buffer-name)
+              (puthash ,key res ivy-erlang-complete--eldocs))))
+     nil)
+    (t (ivy-erlang-complete--highlight-nth-arg (ivy-erlang-complete--cur-arg-num) eldoc)))))
+
+;; TODO: add eldoc support for macros
+(defun ivy-erlang-complete--eldoc ()
   "Function for support eldoc."
   (let* ((pos (point))
          (mod-fun (progn
@@ -1033,10 +1069,8 @@ If non-nil, EXTRA-ARGS string is appended to command."
     (goto-char pos)
     (if (not (and (stringp info)
                   (string-equal "." info)))
-        (ivy-erlang-complete--highlight-nth-arg
-         (ivy-erlang-complete--cur-arg-num)
-         info)
-      nil)))
+        info
+      "")))
 
 (defun ivy-erlang-complete--match-by-arity (list arity)
   "Return first element from LIST matched by ARITY."
