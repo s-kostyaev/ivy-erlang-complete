@@ -1,7 +1,7 @@
 (source gnu)
 (source melpa)
 
-(package "ivy-erlang-complete" "0.1.4" "Erlang completion at point using ivy.")
+(package "ivy-erlang-complete" "0.2.0" "Erlang context sensitive completion at point using ivy. It also support xref and eldoc.")
 
 (depends-on "emacs" "24.4")
 (depends-on "erlang" "19.2")
