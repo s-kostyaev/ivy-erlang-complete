@@ -454,6 +454,8 @@
         (async-start
          `(lambda ()
             ,(async-inject-variables "load-path")
+            ,(async-inject-variables "ivy-erlang-complete-project-root")
+            ,(async-inject-variables "ivy-erlang-complete-erlang-root")
             (require 'ivy-erlang-complete)
             (find-file ,(buffer-file-name))
             (setq ivy-erlang-complete-project-root
@@ -545,6 +547,8 @@
         (async-start
          `(lambda ()
             ,(async-inject-variables "load-path")
+            ,(async-inject-variables "ivy-erlang-complete-project-root")
+            ,(async-inject-variables "ivy-erlang-complete-erlang-root")
             (require 'ivy-erlang-complete)
             (find-file ,(buffer-file-name))
             (setq ivy-erlang-complete-project-root
@@ -981,6 +985,8 @@ If non-nil, EXTRA-ARGS string is appended to command."
       (async-start
        `(lambda ()
           ,(async-inject-variables "load-path")
+          ,(async-inject-variables "ivy-erlang-complete-project-root")
+          ,(async-inject-variables "ivy-erlang-complete-erlang-root")
           (require 'ivy-erlang-complete)
           (find-file ,(buffer-file-name))
           (setq eval-expression-print-length nil)
