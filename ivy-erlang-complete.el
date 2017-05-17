@@ -105,6 +105,10 @@
   "Enable eldoc."
   :type 'boolean :group 'ivy-erlang-complete)
 
+(defcustom ivy-erlang-complete-enable-autosave t
+  "Enable autosave.  If this option is set, buffer will be saved before try to get eldoc asynchronously."
+  :type 'boolean :group 'ivy-erlang-complete)
+
 (defcustom ivy-erlang-complete-enable-fun-head-eldoc t
   "Enable function head as eldoc if no specs or callbacks at point."
   :type 'boolean :group 'ivy-erlang-complete)
@@ -982,6 +986,7 @@ If non-nil, EXTRA-ARGS string is appended to command."
       nil)
      ((eq eldoc nil)
       (puthash key "in-progress" ivy-erlang-complete--eldocs)
+      (if ivy-erlang-complete-enable-autosave (save-buffer))
       (async-start
        `(lambda ()
           ,(async-inject-variables "load-path")
