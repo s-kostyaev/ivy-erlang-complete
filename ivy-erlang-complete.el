@@ -82,12 +82,10 @@
 (defvar-local ivy-erlang-complete--macros-parsing-in-progress nil
   "Sync variable for async macros parsing.")
 
-(defvar ivy-erlang-complete--behaviours
-  (make-hash-table :test 'equal)
+(defvar ivy-erlang-complete--behaviours nil
   "Memoizaton for behaviours.")
 
-(defvar-local ivy-erlang-complete--eldocs
-  (make-hash-table :test 'equal)
+(defvar-local ivy-erlang-complete--eldocs nil
   "Memoizaton for eldocs.")
 
 (defvar ivy-erlang-complete--global-project-root nil
@@ -183,6 +181,8 @@
   "Config ivy-erlang-complete by default."
   (interactive)
   (ivy-erlang-complete-autosetup-project-root)
+  (setq-local ivy-erlang-complete--eldocs
+              (make-hash-table :test 'equal))
   (ivy-erlang-complete-reparse)
   (if ivy-erlang-complete-use-default-keys
       (progn
@@ -424,13 +424,13 @@
         (setq ivy-erlang-complete--local-functions nil)
         (ivy-erlang-complete--find-local-functions)
         (ivy-erlang-complete--async-parse-macros)
-        (setq ivy-erlang-complete--behaviours
+        (setq-local ivy-erlang-complete--behaviours
               (make-hash-table :test 'equal))
         (ivy-erlang-complete--async-parse-records))))
 
 (defun ivy-erlang-complete--parse-records ()
   "Parse erlang records in FILE."
-  (setq ivy-erlang-complete-records (make-hash-table :test 'equal))
+  (setq-local ivy-erlang-complete-records (make-hash-table :test 'equal))
   (cl-mapcar
    'ivy-erlang-complete--parse-record
    (ivy-erlang-complete--flatten
