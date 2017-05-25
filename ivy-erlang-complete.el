@@ -82,7 +82,8 @@
 (defvar-local ivy-erlang-complete--macros-parsing-in-progress nil
   "Sync variable for async macros parsing.")
 
-(defvar ivy-erlang-complete--behaviours nil
+(defvar ivy-erlang-complete--behaviours
+  (make-hash-table :test 'equal)
   "Memoizaton for behaviours.")
 
 (defvar-local ivy-erlang-complete--eldocs nil
