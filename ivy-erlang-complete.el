@@ -46,7 +46,7 @@
 (defvar ivy-erlang-complete-project-root nil
   "Path to erlang project root.")
 
-(defvar-local ivy-erlang-complete--file-suffix "-a -G '\\.[eh]rl'"
+(defvar-local ivy-erlang-complete--file-suffix "-U -G '\\.[eh]rl'"
   "Regular expression for erlang files (*.erl *.hrl)")
 
 (defvar-local ivy-erlang-complete-candidates nil
@@ -112,6 +112,11 @@
   "Enable function head as eldoc if no specs or callbacks at point."
   :type 'boolean :group 'ivy-erlang-complete)
 
+(defcustom ivy-erlang-complete-ignore-dirs
+  '(".git" "_build")
+  "Exclude directory patterns from this list while search definition/references."
+  :type 'list :group 'ivy-erlang-complete)
+
 (defun ivy-erlang-complete--executable (name)
   "Return path to executable with NAME."
   (concat ivy-erlang-complete--base "bin/" name))
@@ -127,8 +132,9 @@
                   (shell-command-to-string
                    (concat "find "
                            project-root
-                           "/*"
-                           " -type d -name include")))
+                           "/* "
+                           (ivy-erlang-complete--filter-find)
+                           " -type d -name include -print")))
                  (list project-root
                        (concat project-root "/include")
                        (concat project-root "/deps")
@@ -143,7 +149,8 @@
                          "src") "deps"))))
     (let ((code-path
            (split-string (shell-command-to-string
-                          (concat "find " project-root " -type d -name ebin")))))
+                          (concat "find " project-root " " (ivy-erlang-complete--filter-find)
+                                  " -type d -name ebin -print")))))
       (setq-local flycheck-erlang-library-path code-path))))
 
 ;;;###autoload
@@ -301,7 +308,8 @@
                 (list
                  "find" ivy-erlang-complete-project-root
                  ivy-erlang-complete-erlang-root
-                 "-iname '*.erl' | xargs basename -a |"
+                 (ivy-erlang-complete--filter-find)
+                 "-iname '*.erl' -print | xargs basename -a |"
                  "sed -e 's/\\.erl//g'") " "))
               "\n")))
 
@@ -313,7 +321,8 @@
              (split-string
               (shell-command-to-string
                (string-join
-                (list "find" ivy-erlang-complete-project-root "-name" file "|"
+                (list "find" ivy-erlang-complete-project-root " "
+                      (ivy-erlang-complete--filter-find) " -name" file "-print" "|"
                       "xargs" "sed" "-n" "'/-record(/,/})./p'") " "))
               ")\\.")))
 
@@ -523,8 +532,9 @@
       (shell-command-to-string
        (string-join
         (list
-         "find" ivy-erlang-complete-project-root "-name" file
-         "| xargs grep -h -e '^-define('") " ")))
+         "find" ivy-erlang-complete-project-root
+         (ivy-erlang-complete--filter-find) "-name" file
+         " -print | xargs grep -h -e '^-define('") " ")))
      "\n"))))
 
 (defun ivy-erlang-complete--get-macros ()
@@ -747,9 +757,10 @@ If non-nil, EXTRA-ARGS string is appended to command."
       (let
           ((cmd
             (format
-             "find %s %s %s | xargs grep -H -n -e '^-callback %s(' -e '^-spec %s('"
+             "find %s %s %s %s -print | xargs grep -H -n -e '^-callback %s(' -e '^-spec %s('"
              ivy-erlang-complete-erlang-root
              ivy-erlang-complete--global-project-root
+             (ivy-erlang-complete--filter-find)
              (ivy-erlang-complete--prepare-find-args extra-args)
              qregex qregex)))
         (counsel--async-command cmd))
@@ -761,6 +772,14 @@ If non-nil, EXTRA-ARGS string is appended to command."
  'ivy-erlang-complete--find-grep-spec-function 123 "No matches found")
 (ivy-set-occur 'ivy-erlang-complete--find-grep-spec-function 'counsel-ag-occur)
 
+(defun ivy-erlang-complete--filter-find ()
+  "Exclude ignored dirs from find command."
+  (string-join
+   (cl-mapcar (lambda (dir)
+                (format "-path '*/%s' -prune -o" dir))
+              ivy-erlang-complete-ignore-dirs)
+   " "))
+
 (defun ivy-erlang-complete--find-grep-def-function (string files)
   "Grep in the project directory for STRING in FILES."
   (when (null files)
@@ -769,9 +788,10 @@ If non-nil, EXTRA-ARGS string is appended to command."
       (counsel-more-chars 3)
     (let ((cmd
            (format
-            "find %s %s %s | xargs grep -H -n -e \"\"\"%s\"\"\" -e \"\"\"-type %s\"\"\""
+            "find %s %s %s %s -print | xargs grep -H -n -e \"\"\"%s\"\"\" -e \"\"\"-type %s\"\"\""
             ivy-erlang-complete-erlang-root
             ivy-erlang-complete--global-project-root
+            (ivy-erlang-complete--filter-find)
             (ivy-erlang-complete--prepare-def-find-args files)
             string (string-remove-prefix "^" string))))
       (counsel--async-command cmd))
@@ -788,9 +808,10 @@ If non-nil, EXTRA-ARGS string is appended to command."
   (let
       ((cmd
         (format
-         "find %s %s %s | xargs grep -H -n -e '-type' | sed 's/::*//' | awk '{print $2}'"
+         "find %s %s %s %s -print | xargs grep -H -n -e '-type' | sed 's/::*//' | awk '{print $2}'"
          ivy-erlang-complete-erlang-root
          ivy-erlang-complete-project-root
+         (ivy-erlang-complete--filter-find)
          (ivy-erlang-complete--prepare-def-find-args files))))
     (split-string (shell-command-to-string cmd) "\n")))
 
@@ -895,27 +916,39 @@ If non-nil, EXTRA-ARGS string is appended to command."
      ((string-match-p ":" thing)
       (counsel-ag (concat thing "(")
                   ivy-erlang-complete-project-root
-                  ivy-erlang-complete--file-suffix "find references"))
+                  (format "%s %s" ivy-erlang-complete--file-suffix
+                          (concat "--ignore "
+                                  (string-join ivy-erlang-complete-ignore-dirs " --ignore "))) "find references"))
      ((string-prefix-p "?" thing)
       (counsel-ag (replace-regexp-in-string "?" "\\\?" thing)
                   ivy-erlang-complete-project-root
-                  ivy-erlang-complete--file-suffix "find references"))
+                  (format "%s %s" ivy-erlang-complete--file-suffix
+                          (concat "--ignore "
+                                  (string-join ivy-erlang-complete-ignore-dirs " --ignore "))) "find references"))
      ((thing-at-point-looking-at "-record(\\(['A-Za-z0-9_:.]+\\),")
       (counsel-ag (concat "#" (match-string-no-properties 1))
                   ivy-erlang-complete-project-root
-                  ivy-erlang-complete--file-suffix "find references"))
+                  (format "%s %s" ivy-erlang-complete--file-suffix
+                          (concat "--ignore "
+                                  (string-join ivy-erlang-complete-ignore-dirs " --ignore "))) "find references"))
      ((thing-at-point-looking-at "-define(\\(['A-Za-z0-9_:.]+\\),")
       (counsel-ag (concat "\\\?" (match-string-no-properties 1))
                   ivy-erlang-complete-project-root
-                  ivy-erlang-complete--file-suffix "find references"))
+                  (format "%s %s" ivy-erlang-complete--file-suffix
+                          (concat "--ignore "
+                                  (string-join ivy-erlang-complete-ignore-dirs " --ignore "))) "find references"))
      ((ivy-erlang-complete-record-at-point)
       (counsel-ag (concat "#" (match-string-no-properties 1))
                   ivy-erlang-complete-project-root
-                  ivy-erlang-complete--file-suffix "find references"))
+                  (format "%s %s" ivy-erlang-complete--file-suffix
+                          (concat "--ignore "
+                                  (string-join ivy-erlang-complete-ignore-dirs " --ignore "))) "find references"))
      ((thing-at-point-looking-at "-behaviour(\\([a-z_]+\\)).")
       (counsel-ag (concat "^" (match-string-no-properties 0))
                   ivy-erlang-complete-project-root
-                  "-a -G e\\.[eh]rl$" "find references"))
+                  (format "%s %s" ivy-erlang-complete--file-suffix
+                          (concat "--ignore "
+                                  (string-join ivy-erlang-complete-ignore-dirs " --ignore "))) "find references"))
      ((let* ((pos (point))
              (is-function
               (progn
@@ -931,25 +964,33 @@ If non-nil, EXTRA-ARGS string is appended to command."
       (counsel-ag (concat (file-name-base (buffer-file-name))
                           ":" thing "(")
                   ivy-erlang-complete-project-root
-                  ivy-erlang-complete--file-suffix "find references"))
+                  (format "%s %s" ivy-erlang-complete--file-suffix
+                          (concat "--ignore "
+                                  (string-join ivy-erlang-complete-ignore-dirs " --ignore "))) "find references"))
      ((cl-find-if (lambda (x) (string-match-p (format "%s/[0-9]+" thing) x))
                   (ivy-erlang-complete--exported-types
                    (file-name-base (buffer-file-name))))
       (counsel-ag (concat (file-name-base (buffer-file-name)) ":" thing "(")
-                    ivy-erlang-complete-project-root
-                    ivy-erlang-complete--file-suffix
-                    "find references"))
+                  ivy-erlang-complete-project-root
+                  (format "%s %s" ivy-erlang-complete--file-suffix
+                          (concat "--ignore "
+                                  (string-join ivy-erlang-complete-ignore-dirs " --ignore ")))
+                  "find references"))
      ((and
        (string-equal "hrl" (file-name-extension (buffer-file-name)))
        (thing-at-point-looking-at (format "^-type[ \t\n]+\\(%s\\)"
-                                         erlang-atom-regexp)))
+                                          erlang-atom-regexp)))
       (counsel-ag (concat (match-string-no-properties 1) "(")
-                    ivy-erlang-complete-project-root
-                    ivy-erlang-complete--file-suffix
-                    "find references"))
+                  ivy-erlang-complete-project-root
+                  (format "%s %s" ivy-erlang-complete--file-suffix
+                          (concat "--ignore "
+                                  (string-join ivy-erlang-complete-ignore-dirs " --ignore ")))
+                  "find references"))
      (t (counsel-ag thing
                     ivy-erlang-complete-project-root
-                    ivy-erlang-complete--file-suffix
+                    (format "%s %s" ivy-erlang-complete--file-suffix
+                            (concat "--ignore "
+                                    (string-join ivy-erlang-complete-ignore-dirs " --ignore ")))
                     "find references")))))
 
 ;;;###autoload
@@ -1022,9 +1063,10 @@ If non-nil, EXTRA-ARGS string is appended to command."
                              (cl-mapcar (lambda (s) (concat (string-trim s) "."))
                                         (split-string
                                          (shell-command-to-string
-                                          (format "find %s %s -name '%s.erl' | xargs awk '/^-spec %s\\(/,/\\.$/'"
+                                          (format "find %s %s %s -name '%s.erl' -print | xargs awk '/^-spec %s\\(/,/\\.$/'"
                                                   ivy-erlang-complete-project-root
                                                   ivy-erlang-complete-erlang-root
+                                                  (ivy-erlang-complete--filter-find)
                                                   mod fun)) "\\\.$"))
                              arity)
                             (when ivy-erlang-complete-enable-fun-head-eldoc
@@ -1032,9 +1074,10 @@ If non-nil, EXTRA-ARGS string is appended to command."
                                (cl-mapcar (lambda (s) (string-trim s))
                                           (split-string
                                            (shell-command-to-string
-                                            (format "find %s %s -name '%s.erl' | xargs awk '/^%s\\(/,/->/' | sed 's/->.*$/->/'"
+                                            (format "find %s %s %s -name '%s.erl' -print | xargs awk '/^%s\\(/,/->/' | sed 's/->.*$/->/'"
                                                     ivy-erlang-complete-project-root
                                                     ivy-erlang-complete-erlang-root
+                                                    (ivy-erlang-complete--filter-find)
                                                     mod fun)) "->"))
                                arity)))))
                      ((ivy-erlang-complete--extract-behaviours (buffer-file-name))
@@ -1042,9 +1085,10 @@ If non-nil, EXTRA-ARGS string is appended to command."
                            (cl-mapcar (lambda (s) (concat (string-trim s) "."))
                                       (split-string
                                        (shell-command-to-string
-                                        (format "find %s %s %s | xargs awk '/^-callback %s\\(/,/\\.$/'"
+                                        (format "find %s %s %s %s -print | xargs awk '/^-callback %s\\(/,/\\.$/'"
                                                 ivy-erlang-complete-project-root
                                                 ivy-erlang-complete-erlang-root
+                                                (ivy-erlang-complete--filter-find)
                                                 (ivy-erlang-complete--prepare-find-args
                                                  (ivy-erlang-complete--extract-behaviours (buffer-file-name)))
                                                 mod-fun)) "\\\.$"))
