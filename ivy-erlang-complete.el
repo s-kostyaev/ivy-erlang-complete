@@ -741,7 +741,7 @@
                           (list args))
     (string-join
      (cl-mapcar (lambda (s) (format "-name '%s'" s))
-                (ivy-erlang-complete--flatten args)) " -o ")))
+                (ivy-erlang-complete--flatten args)) " -print -o ")))
 
 (defun ivy-erlang-complete--find-grep-spec-function (string extra-args)
   "Grep in the project directory for STRING.
