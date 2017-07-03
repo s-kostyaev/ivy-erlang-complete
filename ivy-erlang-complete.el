@@ -920,11 +920,12 @@ If non-nil, EXTRA-ARGS string is appended to command."
       (counsel-rg
        thing
        ivy-erlang-complete-project-root
-       (format "-t erlang %s" (string-join
-                               (cl-mapcar
-                                (lambda (s) (format "-g '!%s'" s))
-                                ivy-erlang-complete-ignore-dirs)
-                               " "))
+       (format "-t erlang -uu %s"
+               (string-join
+                (cl-mapcar
+                 (lambda (s) (format "-g '!%s'" s))
+                 ivy-erlang-complete-ignore-dirs)
+                " "))
        "find references")
     (ivy-erlang-complete--find-references
      thing
