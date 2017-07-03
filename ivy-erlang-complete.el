@@ -215,7 +215,7 @@
           #'ivy-erlang-complete-find-file)))
   (if ivy-erlang-complete-enable-eldoc
       (set (make-local-variable 'eldoc-documentation-function)
-         'ivy-erlang-complete-eldoc)))
+           'ivy-erlang-complete-eldoc)))
 
 ;;;###autoload
 (defun ivy-erlang-complete-show-doc-at-point ()
@@ -435,7 +435,7 @@
         (ivy-erlang-complete--find-local-functions)
         (ivy-erlang-complete--async-parse-macros)
         (setq-local ivy-erlang-complete--behaviours
-              (make-hash-table :test 'equal))
+                    (make-hash-table :test 'equal))
         (ivy-erlang-complete--async-parse-records))))
 
 (defun ivy-erlang-complete--parse-records ()
@@ -904,6 +904,36 @@ If non-nil, EXTRA-ARGS string is appended to command."
   (let ((thing (ivy-erlang-complete-thing-at-point)))
     (ivy-erlang-complete--find-definition thing)))
 
+(defvar ivy-erlang-complete--rg-installed? 'unset)
+(defun ivy-erlang-complete-rg-installed? ()
+  "Return t if rg is installed."
+  (if (eq ivy-erlang-complete--rg-installed? 'unset)
+      (setq ivy-erlang-complete--rg-installed?
+            (not (null (string-match-p "ripgrep"
+                                       (shell-command-to-string
+                                        "rg --version")))))
+    ivy-erlang-complete--rg-installed?))
+
+(defun ivy-erlang-complete--find-references (thing)
+  "Find THING references in project directory."
+  (if (ivy-erlang-complete-rg-installed?)
+      (counsel-rg
+       thing
+       ivy-erlang-complete-project-root
+       (format "-t erlang %s" (string-join
+                               (cl-mapcar
+                                (lambda (s) (format "-g '!%s'" s))
+                                ivy-erlang-complete-ignore-dirs)
+                               " "))
+       "find references")
+    (ivy-erlang-complete--find-references
+     thing
+     ivy-erlang-complete-project-root
+     (format "%s %s" ivy-erlang-complete--file-suffix
+             (concat "--ignore "
+                     (string-join ivy-erlang-complete-ignore-dirs " --ignore ")))
+     "find references")))
+
 ;;;###autoload
 (defun ivy-erlang-complete-find-references ()
   "Find erlang references."
@@ -914,41 +944,17 @@ If non-nil, EXTRA-ARGS string is appended to command."
   (let ((thing (ivy-erlang-complete-thing-at-point)))
     (cond
      ((string-match-p ":" thing)
-      (counsel-ag (concat thing "(")
-                  ivy-erlang-complete-project-root
-                  (format "%s %s" ivy-erlang-complete--file-suffix
-                          (concat "--ignore "
-                                  (string-join ivy-erlang-complete-ignore-dirs " --ignore "))) "find references"))
+      (ivy-erlang-complete--find-references (concat thing "(")))
      ((string-prefix-p "?" thing)
-      (counsel-ag (replace-regexp-in-string "?" "\\\?" thing)
-                  ivy-erlang-complete-project-root
-                  (format "%s %s" ivy-erlang-complete--file-suffix
-                          (concat "--ignore "
-                                  (string-join ivy-erlang-complete-ignore-dirs " --ignore "))) "find references"))
+      (ivy-erlang-complete--find-references (replace-regexp-in-string "?" "\\\?" thing)))
      ((thing-at-point-looking-at "-record(\\(['A-Za-z0-9_:.]+\\),")
-      (counsel-ag (concat "#" (match-string-no-properties 1))
-                  ivy-erlang-complete-project-root
-                  (format "%s %s" ivy-erlang-complete--file-suffix
-                          (concat "--ignore "
-                                  (string-join ivy-erlang-complete-ignore-dirs " --ignore "))) "find references"))
+      (ivy-erlang-complete--find-references (concat "#" (match-string-no-properties 1))))
      ((thing-at-point-looking-at "-define(\\(['A-Za-z0-9_:.]+\\),")
-      (counsel-ag (concat "\\\?" (match-string-no-properties 1))
-                  ivy-erlang-complete-project-root
-                  (format "%s %s" ivy-erlang-complete--file-suffix
-                          (concat "--ignore "
-                                  (string-join ivy-erlang-complete-ignore-dirs " --ignore "))) "find references"))
+      (ivy-erlang-complete--find-references (concat "\\\?" (match-string-no-properties 1))))
      ((ivy-erlang-complete-record-at-point)
-      (counsel-ag (concat "#" (match-string-no-properties 1))
-                  ivy-erlang-complete-project-root
-                  (format "%s %s" ivy-erlang-complete--file-suffix
-                          (concat "--ignore "
-                                  (string-join ivy-erlang-complete-ignore-dirs " --ignore "))) "find references"))
+      (ivy-erlang-complete--find-references (concat "#" (match-string-no-properties 1))))
      ((thing-at-point-looking-at "-behaviour(\\([a-z_]+\\)).")
-      (counsel-ag (concat "^" (match-string-no-properties 0))
-                  ivy-erlang-complete-project-root
-                  (format "%s %s" ivy-erlang-complete--file-suffix
-                          (concat "--ignore "
-                                  (string-join ivy-erlang-complete-ignore-dirs " --ignore "))) "find references"))
+      (ivy-erlang-complete--find-references (concat "^" (match-string-no-properties 0))))
      ((let* ((pos (point))
              (is-function
               (progn
@@ -961,37 +967,18 @@ If non-nil, EXTRA-ARGS string is appended to command."
                      (point-min) t 1)))))
         (goto-char pos)
         is-function)
-      (counsel-ag (concat (file-name-base (buffer-file-name))
-                          ":" thing "(")
-                  ivy-erlang-complete-project-root
-                  (format "%s %s" ivy-erlang-complete--file-suffix
-                          (concat "--ignore "
-                                  (string-join ivy-erlang-complete-ignore-dirs " --ignore "))) "find references"))
+      (ivy-erlang-complete--find-references (concat (file-name-base (buffer-file-name))
+                                                    ":" thing "(")))
      ((cl-find-if (lambda (x) (string-match-p (format "%s/[0-9]+" thing) x))
                   (ivy-erlang-complete--exported-types
                    (file-name-base (buffer-file-name))))
-      (counsel-ag (concat (file-name-base (buffer-file-name)) ":" thing "(")
-                  ivy-erlang-complete-project-root
-                  (format "%s %s" ivy-erlang-complete--file-suffix
-                          (concat "--ignore "
-                                  (string-join ivy-erlang-complete-ignore-dirs " --ignore ")))
-                  "find references"))
+      (ivy-erlang-complete--find-references (concat (file-name-base (buffer-file-name)) ":" thing "(")))
      ((and
        (string-equal "hrl" (file-name-extension (buffer-file-name)))
        (thing-at-point-looking-at (format "^-type[ \t\n]+\\(%s\\)"
                                           erlang-atom-regexp)))
-      (counsel-ag (concat (match-string-no-properties 1) "(")
-                  ivy-erlang-complete-project-root
-                  (format "%s %s" ivy-erlang-complete--file-suffix
-                          (concat "--ignore "
-                                  (string-join ivy-erlang-complete-ignore-dirs " --ignore ")))
-                  "find references"))
-     (t (counsel-ag thing
-                    ivy-erlang-complete-project-root
-                    (format "%s %s" ivy-erlang-complete--file-suffix
-                            (concat "--ignore "
-                                    (string-join ivy-erlang-complete-ignore-dirs " --ignore ")))
-                    "find references")))))
+      (ivy-erlang-complete--find-references (concat (match-string-no-properties 1) "(")))
+     (t (ivy-erlang-complete--find-references thing)))))
 
 ;;;###autoload
 (defun ivy-erlang-complete-find-file ()
@@ -1171,7 +1158,7 @@ If non-nil, EXTRA-ARGS string is appended to command."
         (goto-char cur-pos)
         (if (equal (char-after) ?\,)
             (- res 1)
-         res))
+          res))
     (error nil)))
 
 (defun ivy-erlang-complete--highlight-nth-arg (n exp)
@@ -1189,7 +1176,7 @@ If non-nil, EXTRA-ARGS string is appended to command."
             (setq begin (point)))
         (forward-sexp)
         (while cont
-           (cond ((eobp)
+          (cond ((eobp)
                  (setq cont nil))
                 ((and (not begin)
                       (equal n 1))
