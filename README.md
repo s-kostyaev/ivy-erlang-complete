@@ -23,7 +23,11 @@ You can now install package `ivy-erlang-complete` from
  * coreutils
  * sed
  * grep
- * the_silver_searcher `ag` (for finding definition, references and specs)
+ * the_silver_searcher `ag` (for finding definition, references and
+   specs) or
+ * ripgrep `rg` (preffered). Ripgrep is faster on this cases so if you
+   install it `ivy-erlang-complete` will be use `rg` for finding
+   definition, references and specs. Just install ripgrep.
  
 ## Basic setup
 
