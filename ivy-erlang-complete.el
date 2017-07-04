@@ -748,6 +748,8 @@
 If non-nil, EXTRA-ARGS string is appended to command."
   (when (null extra-args)
     (setq-local extra-args "*"))
+  (if (not (listp extra-args))
+      (setq extra-args (list extra-args)))
   (if (< (length string) 3)
       (counsel-more-chars 3)
     (let ((qregex (shell-quote-argument
@@ -756,13 +758,30 @@ If non-nil, EXTRA-ARGS string is appended to command."
                           (ivy--regex string))))))
       (let
           ((cmd
-            (format
-             "find %s %s %s %s -print | xargs grep -H -n -e '^-callback %s(' -e '^-spec %s('"
-             ivy-erlang-complete-erlang-root
-             ivy-erlang-complete--global-project-root
-             (ivy-erlang-complete--filter-find)
-             (ivy-erlang-complete--prepare-find-args extra-args)
-             qregex qregex)))
+            (if (ivy-erlang-complete-rg-installed?)
+                (format
+                 "rg -i --no-heading --line-number --max-columns 150 -uu -t erlang %s %s -e '^-callback %s\\(' -e '^-spec %s\\(' %s %s"
+                 (string-join
+                  (cl-mapcar
+                   (lambda (s) (format "-g '!%s'" s))
+                   ivy-erlang-complete-ignore-dirs)
+                  " ")
+                 (string-join
+                  (cl-mapcar
+                   (lambda (s) (format "-g '%s.erl'" s))
+                   extra-args)
+                  " ")
+                 qregex
+                 qregex
+                 ivy-erlang-complete-erlang-root
+                 ivy-erlang-complete--global-project-root)
+              (format
+               "find %s %s %s %s -print | xargs grep -H -n -e '^-callback %s(' -e '^-spec %s('"
+               ivy-erlang-complete-erlang-root
+               ivy-erlang-complete--global-project-root
+               (ivy-erlang-complete--filter-find)
+               (ivy-erlang-complete--prepare-find-args extra-args)
+               qregex qregex))))
         (counsel--async-command cmd))
       nil)))
 
@@ -784,16 +803,35 @@ If non-nil, EXTRA-ARGS string is appended to command."
   "Grep in the project directory for STRING in FILES."
   (when (null files)
     (setq-local files "*"))
+  (if (not (listp files))
+      (setq files (list files)))
   (if (< (length string) 3)
       (counsel-more-chars 3)
     (let ((cmd
-           (format
-            "find %s %s %s %s -print | xargs grep -H -n -e \"\"\"%s\"\"\" -e \"\"\"-type %s\"\"\""
-            ivy-erlang-complete-erlang-root
-            ivy-erlang-complete--global-project-root
-            (ivy-erlang-complete--filter-find)
-            (ivy-erlang-complete--prepare-def-find-args files)
-            string (string-remove-prefix "^" string))))
+           (if (ivy-erlang-complete-rg-installed?)
+               (format
+                "rg -i --no-heading --line-number --max-columns 150 -uu -t erlang %s %s -e '%s' -e '-type %s' %s %s"
+                (string-join
+                 (cl-mapcar
+                  (lambda (s) (format "-g '!%s'" s))
+                  ivy-erlang-complete-ignore-dirs)
+                 " ")
+                (string-join
+                 (cl-mapcar
+                  (lambda (s) (format "-g '%s'" s))
+                  files)
+                 " ")
+                (replace-regexp-in-string "(" "\\\\(" string)
+                (replace-regexp-in-string "(" "\\\\(" (string-remove-prefix "^" string))
+                ivy-erlang-complete-erlang-root
+                ivy-erlang-complete--global-project-root)
+             (format
+              "find %s %s %s %s -print | xargs grep -H -n -e \"\"\"%s\"\"\" -e \"\"\"-type %s\"\"\""
+              ivy-erlang-complete-erlang-root
+              ivy-erlang-complete--global-project-root
+              (ivy-erlang-complete--filter-find)
+              (ivy-erlang-complete--prepare-def-find-args files)
+              string (string-remove-prefix "^" string)))))
       (counsel--async-command cmd))
     nil))
 
