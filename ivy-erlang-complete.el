@@ -927,7 +927,7 @@ If non-nil, EXTRA-ARGS string is appended to command."
                  ivy-erlang-complete-ignore-dirs)
                 " "))
        "find references")
-    (ivy-erlang-complete--find-references
+    (counsel-ag
      thing
      ivy-erlang-complete-project-root
      (format "%s %s" ivy-erlang-complete--file-suffix
