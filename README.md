@@ -12,6 +12,8 @@ definition/references/specs and find files in current project. Project
 will be setup automatically based on rebar or rebar3 configs and some
 heuristics. For now this package also support eldoc.
 
+[![asciicast](https://asciinema.org/a/128002.png)](https://asciinema.org/a/128002)
+
 ## Installation
 
 You can now install package `ivy-erlang-complete` from
@@ -148,7 +150,7 @@ browser.
 - [x] create [company backend](https://github.com/s-kostyaev/company-erlang)
 - [x] add eldoc support
 - [ ] improve working with macros (add arity and eldoc)
-- [ ] renew gifs in this file
+- [x] renew gifs in this file (added link to asciinema)
 
 ## Why not `distel`?
 
