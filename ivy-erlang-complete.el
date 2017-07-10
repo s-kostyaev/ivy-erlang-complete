@@ -789,6 +789,8 @@ If non-nil, EXTRA-ARGS string is appended to command."
  'ivy-erlang-complete--find-grep-spec-function 'counsel-git-grep-transformer)
 (counsel-set-async-exit-code
  'ivy-erlang-complete--find-grep-spec-function 123 "No matches found")
+(counsel-set-async-exit-code
+ 'ivy-erlang-complete--find-grep-spec-function 1 "No matches found")
 (ivy-set-occur 'ivy-erlang-complete--find-grep-spec-function 'counsel-ag-occur)
 
 (defun ivy-erlang-complete--filter-find ()
@@ -857,6 +859,8 @@ If non-nil, EXTRA-ARGS string is appended to command."
  'ivy-erlang-complete--find-grep-def-function 'counsel-git-grep-transformer)
 (counsel-set-async-exit-code
  'ivy-erlang-complete--find-grep-def-function 123 "No matches found")
+(counsel-set-async-exit-code
+ 'ivy-erlang-complete--find-grep-def-function 1 "No matches found")
 (ivy-set-occur 'ivy-erlang-complete--find-def-spec-function 'counsel-ag-occur)
 
 (defun ivy-erlang-complete--find-def (filename regex)
