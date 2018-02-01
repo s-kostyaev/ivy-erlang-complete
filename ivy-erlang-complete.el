@@ -112,10 +112,19 @@
   "Enable function head as eldoc if no specs or callbacks at point."
   :type 'boolean :group 'ivy-erlang-complete)
 
+(defcustom ivy-erlang-complete-enable-notification nil
+  "Enable notification on updated completions."
+  :type 'boolean :group 'ivy-erlang-complete)
+
 (defcustom ivy-erlang-complete-ignore-dirs
   '(".git" "_build")
   "Exclude directory patterns from this list while search definition/references."
   :type 'list :group 'ivy-erlang-complete)
+
+(defun ivy-erlang-complete--notify ()
+  "Notify about updated completions if enabled."
+  (if ivy-erlang-complete-enable-notification
+      (message "Erlang completions updated")))
 
 (defun ivy-erlang-complete--executable (name)
   "Return path to executable with NAME."
@@ -482,7 +491,7 @@
             (with-current-buffer ,(buffer-name)
               (setq ivy-erlang-complete-records (read res))
               (setq ivy-erlang-complete--record-parsing-in-progress nil))
-            (message "Erlang completions updated"))))))
+            (ivy-erlang-complete--notify))))))
 
 (defun ivy-erlang-complete--get-record-names ()
   "Return list of acceptable record names."
@@ -576,7 +585,7 @@
             (with-current-buffer ,(buffer-name)
               (setq ivy-erlang-complete-macros (read res))
               (setq ivy-erlang-complete--macros-parsing-in-progress nil))
-            (message "Erlang completions updated"))))))
+            (ivy-erlang-complete--notify))))))
 
 
 ;;;###autoload
