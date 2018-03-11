@@ -319,7 +319,7 @@
                  ivy-erlang-complete-erlang-root
                  (ivy-erlang-complete--filter-find)
                  "-iname '*.erl' -print | xargs basename -a |"
-                 "sed -e 's/\\.erl//g'") " "))
+                 "sed -E -e 's/\\.erl//g'") " "))
               "\n")))
 
 (defun ivy-erlang-complete--extract-records (file)
@@ -332,7 +332,7 @@
                (string-join
                 (list "find" ivy-erlang-complete-project-root " "
                       (ivy-erlang-complete--filter-find) " -name" file "-print" "|"
-                      "xargs" "sed" "-n" "'/-record(/,/})./p'") " "))
+                      "xargs" "sed" "-E" "-n" "'/-record\\(/,/}\\)./p'") " "))
               ")\\.")))
 
 (defun ivy-erlang-complete--parse-record (record)
@@ -857,7 +857,7 @@ If non-nil, EXTRA-ARGS string is appended to command."
   (let
       ((cmd
         (format
-         "find %s %s %s %s -print | xargs grep -H -n -e '-type' | sed 's/::*//' | awk '{print $2}'"
+         "find %s %s %s %s -print | xargs grep -H -n -e '-type' | sed -E 's/::*//' | awk '{print $2}'"
          ivy-erlang-complete-erlang-root
          ivy-erlang-complete-project-root
          (ivy-erlang-complete--filter-find)
@@ -897,7 +897,7 @@ If non-nil, EXTRA-ARGS string is appended to command."
                      (split-string
                       (shell-command-to-string
                        (format "grep -e '^-behaviour(' %s" file)) "\n"
-                       t))
+                      t))
                ivy-erlang-complete--behaviours)))
 
 (defun ivy-erlang-complete--find-spec (thing)
@@ -1113,7 +1113,7 @@ If non-nil, EXTRA-ARGS string is appended to command."
                                (cl-mapcar (lambda (s) (string-trim s))
                                           (split-string
                                            (shell-command-to-string
-                                            (format "find %s %s %s -name '%s.erl' -print | xargs awk '/^%s\\(/,/->/' | sed 's/->.*$/->/'"
+                                            (format "find %s %s %s -name '%s.erl' -print | xargs awk '/^%s\\(/,/->/' | sed -E 's/->.*$/->/'"
                                                     ivy-erlang-complete-project-root
                                                     ivy-erlang-complete-erlang-root
                                                     (ivy-erlang-complete--filter-find)
@@ -1144,7 +1144,7 @@ If non-nil, EXTRA-ARGS string is appended to command."
                              (cl-mapcar (lambda (s) (string-trim s))
                                         (split-string
                                          (shell-command-to-string
-                                          (format "awk '/^%s\\(/,/->/' '%s' | sed 's/->.*$/->/'"
+                                          (format "awk '/^%s\\(/,/->/' '%s' | sed -E 's/->.*$/->/'"
                                                   mod-fun (expand-file-name (buffer-file-name)))) "->"))
                              arity))))
                      (t (or
@@ -1160,7 +1160,7 @@ If non-nil, EXTRA-ARGS string is appended to command."
                             (cl-mapcar (lambda (s) (string-trim s))
                                        (split-string
                                         (shell-command-to-string
-                                         (format "awk '/^%s\\(/,/->/' '%s' | sed 's/->.*$/->/'"
+                                         (format "awk '/^%s\\(/,/->/' '%s' | sed -E 's/->.*$/->/'"
                                                  mod-fun (expand-file-name (buffer-file-name)))) "->"))
                             arity)))))))
     (goto-char pos)
