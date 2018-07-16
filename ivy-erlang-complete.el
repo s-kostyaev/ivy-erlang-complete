@@ -760,7 +760,7 @@ If non-nil, EXTRA-ARGS string is appended to command."
   (if (not (listp extra-args))
       (setq extra-args (list extra-args)))
   (if (< (length string) 3)
-      (counsel-more-chars 3)
+      (counsel-more-chars)
     (let ((qregex (shell-quote-argument
                    (counsel-unquote-regex-parens
                     (setq ivy--old-re
@@ -817,7 +817,7 @@ If non-nil, EXTRA-ARGS string is appended to command."
   (if (not (listp files))
       (setq files (list files)))
   (if (< (length string) 3)
-      (counsel-more-chars 3)
+      (counsel-more-chars)
     (let ((cmd
            (if (ivy-erlang-complete-rg-installed?)
                (format
