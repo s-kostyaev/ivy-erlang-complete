@@ -762,7 +762,7 @@ If non-nil, EXTRA-ARGS string is appended to command."
   (if (< (length string) 3)
       (counsel-more-chars)
     (let ((qregex (shell-quote-argument
-                   (counsel-unquote-regex-parens
+                   (counsel--elisp-to-pcre
                     (setq ivy--old-re
                           (ivy--regex string))))))
       (let
