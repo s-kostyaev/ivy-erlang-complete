@@ -33,6 +33,7 @@
 (require 'counsel)
 (require 'simple)
 (require 'async)
+(require 'thingatpt)
 (if (> emacs-major-version 24) (require 'xref))
 
 (defconst ivy-erlang-complete--base (file-name-directory load-file-name))
