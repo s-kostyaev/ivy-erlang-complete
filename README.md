@@ -39,7 +39,7 @@ For start using you need add to `init.el` something like this:
 (require 'ivy-erlang-complete)
 (add-hook 'erlang-mode-hook #'ivy-erlang-complete-init)
 ;; automatic update completion data after save
-(add-hook 'after-save-hook '#ivy-erlang-complete-reparse)
+(add-hook 'after-save-hook #'ivy-erlang-complete-reparse)
 ```
 
 ### Advanced setup
