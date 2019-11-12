@@ -34,7 +34,7 @@
 (require 'simple)
 (require 'async)
 (require 'thingatpt)
-(if (> emacs-major-version 24) (require 'xref))
+(require 'xref)
 
 (defconst ivy-erlang-complete--base (file-name-directory load-file-name))
 
@@ -216,11 +216,8 @@
           #'ivy-erlang-complete-find-references)
         (define-key erlang-mode-map (kbd "C-c C-f")
           #'ivy-erlang-complete-find-spec)
-        (if (> emacs-major-version 24)
-            (define-key erlang-mode-map (kbd "M-,")
-              #'xref-pop-marker-stack)
-          (define-key erlang-mode-map (kbd "M-,")
-            #'pop-global-mark))
+        (define-key erlang-mode-map (kbd "M-,")
+          #'xref-pop-marker-stack)
         (define-key erlang-mode-map (kbd "C-c C-o")
           #'ivy-erlang-complete-find-file)))
   (if ivy-erlang-complete-enable-eldoc
@@ -940,9 +937,7 @@ If non-nil, EXTRA-ARGS string is appended to command."
 (defun ivy-erlang-complete-find-spec ()
   "Find spec at point.  It also find callback definition."
   (interactive)
-  (if (> emacs-major-version 24)
-      (xref-push-marker-stack)
-    (push-mark))
+  (xref-push-marker-stack)
   (ivy-erlang-complete--find-spec
    (ivy-erlang-complete-thing-at-point)))
 
@@ -950,9 +945,7 @@ If non-nil, EXTRA-ARGS string is appended to command."
 (defun ivy-erlang-complete-find-definition ()
   "Find erlang definition."
   (interactive)
-  (if (> emacs-major-version 24)
-      (xref-push-marker-stack)
-    (push-mark))
+  (xref-push-marker-stack)
   (let ((thing (ivy-erlang-complete-thing-at-point)))
     (ivy-erlang-complete--find-definition thing)))
 
@@ -991,9 +984,7 @@ If non-nil, EXTRA-ARGS string is appended to command."
 (defun ivy-erlang-complete-find-references ()
   "Find erlang references."
   (interactive)
-  (if (> emacs-major-version 24)
-      (xref-push-marker-stack)
-    (push-mark))
+  (xref-push-marker-stack)
   (let ((thing (ivy-erlang-complete-thing-at-point)))
     (cond
      ((string-match-p ":" thing)
@@ -1037,9 +1028,7 @@ If non-nil, EXTRA-ARGS string is appended to command."
 (defun ivy-erlang-complete-find-file ()
   "Find file in current project."
   (interactive)
-  (if (> emacs-major-version 24)
-      (xref-push-marker-stack)
-    (push-mark))
+  (xref-push-marker-stack)
   (counsel-file-jump (format "%s"
                              (or
                               (and
