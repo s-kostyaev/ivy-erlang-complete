@@ -39,7 +39,8 @@
 (defconst ivy-erlang-complete--base (file-name-directory load-file-name))
 
 (defgroup ivy-erlang-complete nil
-  "`ivy-erlang-complete' - context sensitive erlang completion and more with `ivy' frontend.")
+  "Context sensitive erlang completion and more with `ivy' frontend."
+  :group 'erlang)
 
 (defcustom ivy-erlang-complete-erlang-root "/usr/lib/erlang/"
   "Path to erlang root." :type 'string :group 'ivy-erlang-complete)
@@ -161,7 +162,9 @@
            (split-string (shell-command-to-string
                           (concat "find " project-root " " (ivy-erlang-complete--filter-find)
                                   " -type d -name ebin -print")))))
-      (setq-local flycheck-erlang-library-path code-path))))
+      (setq-local flycheck-erlang-library-path code-path)))
+  ;; prevent byte-compiler warning
+  (declare-function ivy-erlang-complete-setup-flycheck "ivy-erlang-complete"))
 
 ;;;###autoload
 (defun ivy-erlang-complete-autosetup-project-root ()
@@ -758,7 +761,7 @@ If non-nil, EXTRA-ARGS string is appended to command."
   (if (not (listp extra-args))
       (setq extra-args (list extra-args)))
   (if (< (length string) 3)
-      (counsel-more-chars)
+      (ivy-more-chars)
     (let ((qregex (shell-quote-argument
                    (counsel--elisp-to-pcre
                     (setq ivy--old-re
@@ -792,8 +795,8 @@ If non-nil, EXTRA-ARGS string is appended to command."
         (counsel--async-command cmd))
       nil)))
 
-(ivy-set-display-transformer
- 'ivy-erlang-complete--find-grep-spec-function 'counsel-git-grep-transformer)
+(ivy-configure 'ivy-erlang-complete--find-grep-spec-function
+  :display-transformer-fn 'counsel-git-grep-transformer)
 (counsel-set-async-exit-code
  'ivy-erlang-complete--find-grep-spec-function 123 "No matches found")
 (counsel-set-async-exit-code
@@ -815,7 +818,7 @@ If non-nil, EXTRA-ARGS string is appended to command."
   (if (not (listp files))
       (setq files (list files)))
   (if (< (length string) 3)
-      (counsel-more-chars)
+      (ivy-more-chars)
     (let ((cmd
            (if (ivy-erlang-complete-rg-installed?)
                (format
@@ -862,8 +865,8 @@ If non-nil, EXTRA-ARGS string is appended to command."
          (ivy-erlang-complete--prepare-def-find-args files))))
     (split-string (shell-command-to-string cmd) "\n")))
 
-(ivy-set-display-transformer
- 'ivy-erlang-complete--find-grep-def-function 'counsel-git-grep-transformer)
+(ivy-configure 'ivy-erlang-complete--find-grep-def-function
+  :display-transformer-fn 'counsel-git-grep-transformer)
 (counsel-set-async-exit-code
  'ivy-erlang-complete--find-grep-def-function 123 "No matches found")
 (counsel-set-async-exit-code
