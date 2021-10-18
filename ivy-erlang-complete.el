@@ -48,10 +48,10 @@
 (defvar ivy-erlang-complete-project-root nil
   "Path to erlang project root.")
 
-(defvar ivy-erlang-complete-exported-funcs "exported-funcs.sh"
+(defvar ivy-erlang-complete--exported-funcs-script "exported-funcs.sh"
   "Name of the shell script used to extract Erlang module functions.")
 
-(defvar ivy-erlang-complete-exported-types "exported-types.sh"
+(defvar ivy-erlang-complete--exported-types-script "exported-types.sh"
   "Name of the shell script used to extract Erlang module functions.")
 
 (when (eq system-type 'darwin)
@@ -64,8 +64,8 @@
   ;;   the system (BSD) sed will remain available.
   ;; - The macOS specific scripts use gsed instead of sed.
   ;;
-  (setq ivy-erlang-complete-exported-funcs "exported-funcs-macos.sh"
-        ivy-erlang-complete-exported-types "exported-types-macos.sh"))
+  (setq ivy-erlang-complete--exported-funcs-script "exported-funcs-macos.sh"
+        ivy-erlang-complete--exported-types-script "exported-types-macos.sh"))
 
 (defvar-local ivy-erlang-complete--file-suffix "-U -G '\\.[eh]rl'"
   "Regular expression for erlang files (*.erl *.hrl)")
@@ -306,7 +306,7 @@
    (shell-command-to-string
     (string-join
      (list
-      (ivy-erlang-complete--executable ivy-erlang-complete-exported-funcs)
+      (ivy-erlang-complete--executable ivy-erlang-complete--exported-funcs-script)
       module
       ivy-erlang-complete-project-root ivy-erlang-complete-erlang-root)
      " "))
@@ -320,7 +320,7 @@
    (shell-command-to-string
     (string-join
      (list
-      (ivy-erlang-complete--executable ivy-erlang-complete-exported-types)
+      (ivy-erlang-complete--executable ivy-erlang-complete--exported-types-script)
       module
       ivy-erlang-complete-project-root ivy-erlang-complete-erlang-root)
      " "))
