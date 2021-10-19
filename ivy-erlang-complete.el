@@ -48,6 +48,25 @@
 (defvar ivy-erlang-complete-project-root nil
   "Path to erlang project root.")
 
+(defvar ivy-erlang-complete--exported-funcs-script "exported-funcs.sh"
+  "Name of the shell script used to extract Erlang module functions.")
+
+(defvar ivy-erlang-complete--exported-types-script "exported-types.sh"
+  "Name of the shell script used to extract Erlang module functions.")
+
+(when (eq system-type 'darwin)
+  ;; On MacOS, sed is BSD sed, not the required GNU sed.
+  ;; MacOS-specific scripts that use GNU sed (gsed) instead of sed must
+  ;; therefore be used.
+  ;;
+  ;; To make these scripts work, install GNU sed with Homebrew:
+  ;; - Homebrew this will install GNU sed as `gsed',
+  ;;   the system (BSD) sed will remain available.
+  ;; - The macOS specific scripts use gsed instead of sed.
+  ;;
+  (setq ivy-erlang-complete--exported-funcs-script "exported-funcs-macos.sh"
+        ivy-erlang-complete--exported-types-script "exported-types-macos.sh"))
+
 (defvar-local ivy-erlang-complete--file-suffix "-U -G '\\.[eh]rl'"
   "Regular expression for erlang files (*.erl *.hrl)")
 
@@ -168,16 +187,16 @@
 
 ;;;###autoload
 (defun ivy-erlang-complete-autosetup-project-root ()
-  "Automatically setup erlang project root."
+  "Automatically setup, and return, erlang project root."
   (interactive)
-  (if ivy-erlang-complete-project-root
-      ivy-erlang-complete-project-root
-    (setq-local ivy-erlang-complete-project-root
-                (ivy-erlang-complete--find-root-by-deps))
-    (if (and ivy-erlang-complete--setup-flycheck (featurep 'flycheck))
-        (ivy-erlang-complete-setup-flycheck
-         ivy-erlang-complete-project-root))
-    ivy-erlang-complete-project-root))
+  (or ivy-erlang-complete-project-root
+      (prog1
+          (setq-local ivy-erlang-complete-project-root
+                      (ivy-erlang-complete--find-root-by-deps))
+        (if (and ivy-erlang-complete--setup-flycheck
+                 (featurep 'flycheck))
+            (ivy-erlang-complete-setup-flycheck
+             ivy-erlang-complete-project-root)))))
 
 (defun ivy-erlang-complete--find-root-by-deps (&optional start-dir)
   "Find project root as directory with rebar dependencies start from START-DIR."
@@ -287,7 +306,7 @@
    (shell-command-to-string
     (string-join
      (list
-      (ivy-erlang-complete--executable "exported-funcs.sh")
+      (ivy-erlang-complete--executable ivy-erlang-complete--exported-funcs-script)
       module
       ivy-erlang-complete-project-root ivy-erlang-complete-erlang-root)
      " "))
@@ -301,7 +320,7 @@
    (shell-command-to-string
     (string-join
      (list
-      (ivy-erlang-complete--executable "exported-types.sh")
+      (ivy-erlang-complete--executable ivy-erlang-complete--exported-types-script)
       module
       ivy-erlang-complete-project-root ivy-erlang-complete-erlang-root)
      " "))
