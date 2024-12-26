@@ -5,6 +5,7 @@
 
 ;; Author: Sergey Kostyaev <feo.me@ya.ru>
 ;; Version: 1.0.0
+;; Package-Requires: ((async "1.9") (counsel "0.13.4") (ivy "0.13.4") (erlang "19.2") (emacs "25.1"))
 ;; Keywords: languages tools
 ;;
 ;; This program is free software; you can redistribute it and/or modify
